@@ -1,14 +1,16 @@
 import base64
 
-from flask import jsonify
-from flask import Flask
-from flask import request
+from flask import jsonify, Flask, request
+import logging
 
 
 class FlockSDK:
     def __init__(self):
         self.flask = Flask(__name__)
         self.methods = {}
+        self.debug = debug
+        logging.basicConfig(
+            level=logging.DEBUG if self.debug else logging.INFO)
 
     def _register_view(self, name, func):
         self.methods[name] = func
@@ -22,6 +24,16 @@ class FlockSDK:
     def evaluate(self, func):
         def wrapper(*args, **kwargs):
             data = request.get_json(force=True)
+
+            if not isinstance(data, dict):
+                logging.error("Invalid data: expected a dictionary.")
+                raise ValueError("Invalid data: expected a dictionary.")
+            if "parameters" not in data or "dataset" not in data:
+                logging.error(
+                    "Missing required keys in data: 'parameters' and 'dataset' are required.")
+                raise ValueError(
+                    "Missing required keys in data: 'parameters' and 'dataset' are required.")
+
             parameters = base64.b64decode(data["parameters"])
             dataset = data["dataset"]
             accuracy = func(parameters, dataset)
@@ -56,8 +68,9 @@ class FlockSDK:
         return func
 
     def _check_registered_methods(self):
-        assert set(self.methods.keys()) == set(["aggregate", "evaluate", "train"])
+        assert set(self.methods.keys()) == set(
+            ["aggregate", "evaluate", "train"])
 
     def run(self):
         self._check_registered_methods()
-        self.flask.run(debug=True)
+        self.flask.run(debug=self.debug)
