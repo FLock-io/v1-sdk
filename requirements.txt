@@ -1,0 +1,3 @@
+# SDK
+flask==2.3.2
+loguru==0.7.0
