@@ -1,14 +1,17 @@
 import base64
-
 from flask import jsonify
 from flask import Flask
 from flask import request
+from loguru import logger
+
+from functools import wraps
 
 
 class FlockSDK:
-    def __init__(self):
+    def __init__(self, debug: bool = False):
         self.flask = Flask(__name__)
         self.methods = {}
+        self.debug = debug
 
     def _register_view(self, name, func):
         self.methods[name] = func
@@ -19,22 +22,30 @@ class FlockSDK:
             methods=["POST", "OPTIONS"],
         )
 
-    def evaluate(self, func):
+    def register_evaluate(self, func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             data = request.get_json(force=True)
-            parameters = base64.b64decode(data["parameters"])
-            dataset = [base64.b64decode(row) for row in data["dataset"]]
+            parameters = data["parameters"]
+            if parameters:
+                parameters = base64.b64decode(data["parameters"])
+
+            dataset = data["dataset"]
             accuracy = func(parameters, dataset)
             return jsonify({"accuracy": accuracy})
 
         self._register_view("evaluate", wrapper)
         return wrapper
 
-    def train(self, func):
+    def register_train(self, func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             data = request.get_json(force=True)
-            parameters = base64.b64decode(data["parameters"])
-            dataset = [base64.b64decode(row) for row in data["dataset"]]
+            parameters = data["parameters"]
+            if parameters:
+                parameters = base64.b64decode(data["parameters"])
+
+            dataset = data["dataset"]
             trained_parameters = func(parameters, dataset)
             b64_parameters = base64.b64encode(trained_parameters)
             return jsonify({"parameters": b64_parameters.decode("ascii")})
@@ -42,11 +53,12 @@ class FlockSDK:
         self._register_view("train", wrapper)
         return wrapper
 
-    def aggregate(self, func):
+    def register_aggregate(self, func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             data = request.get_json(force=True)
             parameters_list = [
-                base64.b64decode(parameters) for paramters in data["parameters_list"]
+                base64.b64decode(parameters) for parameters in data["parameters_list"]
             ]
             aggregated_parameters = func(parameters_list)
             b64_parameters = base64.b64encode(aggregated_parameters)
@@ -60,4 +72,4 @@ class FlockSDK:
 
     def run(self):
         self._check_registered_methods()
-        self.flask.run(debug=True)
+        self.flask.run(host="0.0.0.0", debug=self.debug)
