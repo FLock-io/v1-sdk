@@ -1,0 +1,22 @@
+[project]
+name = "flock_sdk"
+version = "0.0.1"
+description = "An SDK for building applications on top of FLock V1"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "flask >= 2.0.0",
+    "loguru >= 0.7.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/FLock-io/v1-sdk/"
+"Bug Tracker" = "https://github.com/FLock-io/v1-sdk//issues"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
