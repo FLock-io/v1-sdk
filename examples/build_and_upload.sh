@@ -4,8 +4,8 @@ OUTPUT_FILE=`mktemp`
 echo "Building the model image."
 docker build -t $IMAGE_TAG .
 
-echo "Saving the docker image to a file and compressing it.."
-docker save $IMAGE_TAG | xz > $OUTPUT_FILE
+echo "Saving the docker image to a file and compressing it. It may take a while.."
+time (docker save $IMAGE_TAG | xz -T 0 > $OUTPUT_FILE)
 
 echo "Uploading the compressed image to IPFS.."
 json=`curl -F "file=@$OUTPUT_FILE" 127.0.0.1:5001/api/v0/add`

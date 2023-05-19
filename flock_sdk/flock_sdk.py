@@ -1,13 +1,14 @@
 import base64
-
-from flask import jsonify, Flask, request
+from flask import jsonify
+from flask import Flask
+from flask import request
 from loguru import logger
 
 from functools import wraps
 
 
 class FlockSDK:
-    def __init__(self, debug: bool = False):
+    def __init__(self, debug: bool = True):
         self.flask = Flask(__name__)
         self.methods = {}
         self.debug = debug
@@ -28,6 +29,7 @@ class FlockSDK:
             parameters = data["parameters"]
             if parameters:
                 parameters = base64.b64decode(data["parameters"])
+
             dataset = data["dataset"]
             accuracy = func(parameters, dataset)
             return jsonify({"accuracy": accuracy})
@@ -42,6 +44,7 @@ class FlockSDK:
             parameters = data["parameters"]
             if parameters:
                 parameters = base64.b64decode(data["parameters"])
+
             dataset = data["dataset"]
             trained_parameters = func(parameters, dataset)
             b64_parameters = base64.b64encode(trained_parameters)
