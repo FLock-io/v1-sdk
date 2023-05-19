@@ -12,16 +12,15 @@ flock = FlockSDK()
 
 
 class FlockModel:
-    def __init__(
-        self, image_size=84, batch_size=256, epochs=1, lr=0.03, num_classes=20
-    ):
+    def __init__(self, classes, image_size=84, batch_size=256, epochs=1, lr=0.03):
         """
         Hyper parameters
         """
         self.image_size = image_size
         self.batch_size = batch_size
         self.epochs = epochs
-        self.num_classes = num_classes
+        self.classes = classes
+        self.class_to_idx = {_class: idx for idx, _class in self.classes}
         self.lr = lr
         """
             Data prepare
@@ -50,42 +49,20 @@ class FlockModel:
             device = "cuda"
         else:
             device = "cpu"
-        self.device = torch.device("cpu")
+        self.device = torch.device(device)
 
     def get_starting_model(self):
         return MobileNetV3(
             model_mode="LARGE",
-            num_classes=self.num_classes,
+            num_classes=len(self.classes),
             multiplier=1.0,
             dropout_rate=0.0,
         )
 
     def process_dataset(self, dataset: list[dict], transform=None):
         logger.debug("Processing dataset")
-        class_to_idx = {
-            "n02006656": 0,
-            "n02096585": 1,
-            "n02105641": 2,
-            "n02268853": 3,
-            "n02325366": 4,
-            "n02791270": 5,
-            "n02814533": 6,
-            "n03180011": 7,
-            "n03788195": 8,
-            "n04525038": 9,
-            "n04509417": 10,
-            "n02641379": 11,
-            "n02804414": 12,
-            "n03691459": 13,
-            "n07749582": 14,
-            "n10565667": 15,
-            "n12620546": 16,
-            "n02488702": 17,
-            "n03417042": 18,
-            "n03794056": 19,
-        }
         for idx, row in enumerate(dataset):
-            dataset[idx]["label"] = class_to_idx[row["label"]]
+            dataset[idx]["label"] = self.class_to_idx[row["label"]]
 
         dataset = [
             (
@@ -218,15 +195,36 @@ if __name__ == "__main__":
     image_size = 84
     batch_size = 256
     epochs = 5
-    num_classes = 20
     lr = 0.1
+    classes = [
+        "n02006656",
+        "n02096585",
+        "n02105641",
+        "n02268853",
+        "n02325366",
+        "n02791270",
+        "n02814533",
+        "n03180011",
+        "n03788195",
+        "n04525038",
+        "n04509417",
+        "n02641379",
+        "n02804414",
+        "n03691459",
+        "n07749582",
+        "n10565667",
+        "n12620546",
+        "n02488702",
+        "n03417042",
+        "n03794056",
+    ]
 
     flock_model = FlockModel(
+        classes,
         image_size=image_size,
         batch_size=batch_size,
         epochs=epochs,
         lr=lr,
-        num_classes=num_classes,
     )
     flock.register_train(flock_model.train)
     flock.register_evaluate(flock_model.evaluate)
