@@ -8,7 +8,7 @@ from functools import wraps
 
 
 class FlockSDK:
-    def __init__(self, debug: bool = False):
+    def __init__(self, debug: bool = True):
         self.flask = Flask(__name__)
         self.methods = {}
         self.debug = debug
