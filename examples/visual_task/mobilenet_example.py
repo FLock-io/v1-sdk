@@ -1,30 +1,32 @@
-import copy
-import torch
-from tqdm import tqdm
 import io
-from loguru import logger
 from base64 import b64decode
-from PIL import Image
-from flock_sdk import FlockSDK
-from mobilenet_v3 import MobileNetV3
 
+import torch
+import torch.nn.functional as F
+import torch.utils.data
+import torch.utils.data.distributed
+import torchvision.transforms as transforms
+from PIL import Image
+from lightning import Fabric
+from loguru import logger
+from timm import create_model
+
+from flock_sdk import FlockSDK
+
+# Call FLock SDK.
 flock = FlockSDK()
 
 
-class FlockModel:
-    def __init__(self, classes, image_size=84, batch_size=256, epochs=1, lr=0.03):
-        """
-        Hyper parameters
-        """
-        self.image_size = image_size
+class FLockVisual:
+    def __init__(self, model_name, classes, fabric_instance, lr=0.03):
+        num_classes = len(classes)
+        self.model = create_model(model_name, num_classes)
         self.batch_size = batch_size
         self.epochs = epochs
         self.classes = classes
+        self.fabric = fabric_instance
         self.class_to_idx = {_class: idx for idx, _class in self.classes}
         self.lr = lr
-        """
-            Data prepare
-        """
         self.transform_train = transforms.Compose(
             [
                 transforms.RandomResizedCrop(224),
@@ -50,14 +52,6 @@ class FlockModel:
         else:
             device = "cpu"
         self.device = torch.device(device)
-
-    def get_starting_model(self):
-        return MobileNetV3(
-            model_mode="LARGE",
-            num_classes=len(self.classes),
-            multiplier=1.0,
-            dropout_rate=0.0,
-        )
 
     def process_dataset(self, dataset: list[dict], transform=None):
         logger.debug("Processing dataset")
@@ -88,40 +82,35 @@ class FlockModel:
 
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
         data_loader = self.process_dataset(dataset, self.transform_train)
-
-        model = self.get_starting_model()
+        data_loader = self.fabric.setup_dataloader(data_loader)
         if parameters is not None:
-            model.load_state_dict(torch.load(io.BytesIO(parameters)))
-        model.train()
-        opti = torch.optim.SGD(
-            model.parameters(), lr=self.lr, momentum=0.9, weight_decay=5e-4
+            self.model.load_state_dict(torch.load(io.BytesIO(parameters)))
+        self.model.train()
+        optimizer = torch.optim.SGD(
+            self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=5e-4
         )
         loss_func = torch.nn.CrossEntropyLoss()
-        model.to(self.device)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(device)
 
         # pro_bar = tqdm(range(self.epochs))
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             batch_loss = []
             for batch_idx, (inputs, targets) in enumerate(data_loader):
-                # logger.info(f"Inputs: {inputs}")
-                # logger.info(f"Targets: {targets}")
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
-                outputs = model(inputs)
-                # logger.info(f"Outputs: {outputs}")
-                loss = loss_func(outputs, targets)
-                opti.zero_grad()
-                loss.backward()
-                opti.step()
-                batch_loss.append(loss.item())
+                optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss_val = F.cross_entropy(outputs, targets)
+                loss_val.backward()
+                optimizer.step()
+                batch_loss.append(loss_val.item())
                 logger.info(f"Batch idx: {batch_idx}")
-
             logger.info(
                 f"Epoch: {epoch}, Loss: {round(sum(batch_loss) / len(batch_loss), 4)}"
             )
 
         buffer = io.BytesIO()
-        torch.save(model.state_dict(), buffer)
+        torch.save(self.model.state_dict(), buffer)
         return buffer.getvalue()
 
     """
@@ -135,18 +124,17 @@ class FlockModel:
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
         data_loader = self.process_dataset(dataset, self.transform_test)
 
-        model = self.get_starting_model()
         if parameters is not None:
-            model.load_state_dict(torch.load(io.BytesIO(parameters)))
-        model.to(self.device)
-        model.eval()
+            self.model.load_state_dict(torch.load(io.BytesIO(parameters)))
+        self.model.to(self.device)
+        self.model.eval()
 
         correct = 0
         total = 0
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(data_loader):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
-                outputs = model(inputs)
+                outputs = self.model(inputs)
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
@@ -183,16 +171,10 @@ class FlockModel:
         return aggregated_parameters
 
 
-import torch.utils.data
-import torch.utils.data.distributed
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-
 if __name__ == "__main__":
     """
     Hyper parameters
     """
-    image_size = 84
     batch_size = 256
     epochs = 5
     lr = 0.1
@@ -219,9 +201,13 @@ if __name__ == "__main__":
         "n03794056",
     ]
 
-    flock_model = FlockModel(
+    # Add Fabric support
+    fabric = Fabric(accelerator="cuda", devices=-1, strategy="ddp")
+    fabric.launch()
+
+    flock_model = FLockVisual(
         classes,
-        image_size=image_size,
+        fabric_instance=fabric,
         batch_size=batch_size,
         epochs=epochs,
         lr=lr,

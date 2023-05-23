@@ -84,7 +84,7 @@ class SqueezeBlock(nn.Module):
 
 class MobileBlock(nn.Module):
     def __init__(
-        self, in_channels, out_channels, kernal_size, stride, nonLinear, SE, exp_size
+            self, in_channels, out_channels, kernal_size, stride, nonLinear, SE, exp_size
     ):
         super(MobileBlock, self).__init__()
         self.out_channels = out_channels
@@ -148,7 +148,7 @@ class MobileBlock(nn.Module):
 
 class MobileNetV3(nn.Module):
     def __init__(
-        self, model_mode="LARGE", num_classes=1000, multiplier=1.0, dropout_rate=0.0
+            self, model_mode="LARGE", num_classes=1000, multiplier=1.0, dropout_rate=0.0
     ):
         super(MobileNetV3, self).__init__()
         self.num_classes = num_classes
@@ -186,13 +186,13 @@ class MobileNetV3(nn.Module):
 
             self.block = []
             for (
-                in_channels,
-                out_channels,
-                kernal_size,
-                stride,
-                nonlinear,
-                se,
-                exp_size,
+                    in_channels,
+                    out_channels,
+                    kernal_size,
+                    stride,
+                    nonlinear,
+                    se,
+                    exp_size,
             ) in layers:
                 in_channels = _make_divisible(in_channels * multiplier)
                 out_channels = _make_divisible(out_channels * multiplier)
@@ -257,13 +257,13 @@ class MobileNetV3(nn.Module):
 
             self.block = []
             for (
-                in_channels,
-                out_channels,
-                kernal_size,
-                stride,
-                nonlinear,
-                se,
-                exp_size,
+                    in_channels,
+                    out_channels,
+                    kernal_size,
+                    stride,
+                    nonlinear,
+                    se,
+                    exp_size,
             ) in layers:
                 in_channels = _make_divisible(in_channels * multiplier)
                 out_channels = _make_divisible(out_channels * multiplier)
