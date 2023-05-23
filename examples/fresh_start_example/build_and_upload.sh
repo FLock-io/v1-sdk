@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 IMAGE_TAG="flock_model"
 OUTPUT_FILE=`mktemp`
 echo "Building the model image."
