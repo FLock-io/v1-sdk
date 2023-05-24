@@ -80,7 +80,7 @@ class FLockVisual:
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
+    def train(self, parameters: None, dataset: list[dict]) -> bytes:
         data_loader = self.process_dataset(dataset, self.transform_train)
         data_loader = self.fabric.setup_dataloader(data_loader)
         if parameters is not None:
@@ -89,7 +89,6 @@ class FLockVisual:
         optimizer = torch.optim.SGD(
             self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=5e-4
         )
-        loss_func = torch.nn.CrossEntropyLoss()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
 
@@ -101,7 +100,7 @@ class FLockVisual:
                 optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss_val = F.cross_entropy(outputs, targets)
-                loss_val.backward()
+                fabric.backward(loss_val)
                 optimizer.step()
                 batch_loss.append(loss_val.item())
                 logger.info(f"Batch idx: {batch_idx}")
@@ -121,7 +120,7 @@ class FLockVisual:
     5. Output the accuracy of the model parameters on the dataset as a float
     """
 
-    def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
+    def evaluate(self, parameters: None, dataset: list[dict]) -> float:
         data_loader = self.process_dataset(dataset, self.transform_test)
 
         if parameters is not None:
