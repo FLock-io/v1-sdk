@@ -11,6 +11,7 @@ from lightning import Fabric
 from loguru import logger
 from timm import create_model
 
+from dgc import dgc
 from flock_sdk import FlockSDK
 
 # Call FLock SDK.
@@ -92,7 +93,6 @@ class FLockVisual:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
 
-        # pro_bar = tqdm(range(self.epochs))
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             batch_loss = []
@@ -101,7 +101,13 @@ class FLockVisual:
                 outputs = self.model(inputs)
                 loss_val = F.cross_entropy(outputs, targets)
                 fabric.backward(loss_val)
-                optimizer.step()
+                grads = [p.grad for p in self.model.parameters()]
+                compressed_grads = dgc(grads)
+                # Manually update model parameters
+                for p, compressed_grad in zip(self.model.parameters(), compressed_grads):
+                    p.data.add_(-lr, compressed_grad)
+                # Reset gradients
+                optimizer.zero_grad()
                 batch_loss.append(loss_val.item())
                 logger.info(f"Batch idx: {batch_idx}")
             logger.info(
