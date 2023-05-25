@@ -3,33 +3,24 @@ import io
 from loguru import logger
 from flock_sdk import FlockSDK
 import copy
+import sys
 
 import torch.utils.data
 import torch.utils.data.distributed
 from data_preprocessing import load_dataset, get_loader
 from models.basic_cnn import CreditFraudNetMLP
 from tqdm import tqdm
-from pandas import DataFrame
+from compresser.dgc import dgc
+from lightning import Fabric
 
 flock = FlockSDK()
 
 
 class FlockModel:
-    def __init__(
-        self,
-        classes,
-        features,
-        image_size=84,
-        batch_size=256,
-        epochs=1,
-        lr=0.03,
-        compression_method="dgc",
-        compress_ratio=0.3,
-    ):
+    def __init__(self, classes, fabric_instance=None, image_size=84, batch_size=256, epochs=1, lr=0.03, client_id = 1):
         """
-        Hyper parameters
+            Hyper parameters
         """
-        self.features = features
         self.image_size = image_size
         self.batch_size = batch_size
         self.epochs = epochs
@@ -40,6 +31,9 @@ class FlockModel:
         """
             Data prepare
         """
+        # for test
+        self.train_set = load_dataset(f'data/train_{client_id}.csv')
+        self.test_set = load_dataset(f'data/test_{client_id}.csv')
 
         """
             Device setting
@@ -51,44 +45,14 @@ class FlockModel:
         self.device = torch.device(device)
 
         """
-            Communication setting
+            Training setting
         """
-
-        if compression_method == "dgc":
-            from flock_grad_attack.compressor.dgc import (
-                DgcCompressor,
-            )
-
-            self.compressor = DgcCompressor(compress_ratio)
-
-        elif compression_method == "qsgd":
-            from flock_grad_attack.compressor.qsgd import (
-                QSGDCompressor,
-            )
-
-            self.compressor = QSGDCompressor(compress_ratio)
-
-        elif compression_method == "topk":
-            from flock_grad_attack.compressor.topk import (
-                TopKCompressor,
-            )
-
-            self.compressor = TopKCompressor(compress_ratio)
-
-        else:
-            raise NotImplementedError(
-                f"Not implemented compressor {compression_method}"
-            )
-
-    def get_starting_model(self):
-        return CreditFraudNetMLP(num_features=self.features, num_classes=1)
+        # self.fabric = fabric_instance
+        self.model = CreditFraudNetMLP(num_features=self.train_set.shape[1]-1, num_classes=1)
 
     def process_dataset(self, dataset: list[dict], transform=None):
         logger.debug("Processing dataset")
-        dataset_df = DataFrame.from_records(dataset)
-        return get_loader(
-            dataset_df, batch_size=batch_size, shuffle=True, drop_last=False
-        )
+        return get_loader(dataset, batch_size=batch_size, shuffle=True, drop_last=False)
 
     """
     train() should:
@@ -99,25 +63,29 @@ class FlockModel:
     """
 
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
-        data_loader = self.process_dataset(dataset)
+        data_loader = self.process_dataset(self.train_set)
+        # data_loader = self.fabric.setup_dataloader(data_loader)
 
-        logger.info(f"--------- Trainer decompressing global model ---------")
-        model = self.get_starting_model()
         if parameters is not None:
-            model_compressed_dict = torch.load(io.BytesIO(parameters))
-            for name, param in model.named_parameters():
-                decompressed_tensor = self.compressor.decompress(
-                    model_compressed_dict[name]["compressed_tensor"],
-                    model_compressed_dict[name]["ctx"],
-                )
-                param.data = decompressed_tensor
+            self.model.load_state_dict(torch.load(io.BytesIO(parameters)))
 
-        model.train()
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
+        self.model.train()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         criterion = torch.nn.BCELoss()
-        model.to(self.device)
+        self.model.to(self.device)
 
-        # pro_bar = tqdm(range(self.epochs))
+        # size_before_compression = 0
+        # for p in self.model.parameters():
+        #     if p.grad is not None:
+        #         size_before_compression += p.grad.element_size() * p.grad.nelement()
+        #     else:
+        #         logger.info("None grad")
+
+        buffer = io.BytesIO()
+        torch.save(self.model.state_dict(), buffer)
+        uncompressed_payload = buffer.getvalue()
+
+
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             train_loss = 0.0
@@ -127,16 +95,18 @@ class FlockModel:
                 optimizer.zero_grad()
 
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
-                outputs = model(inputs)
-                logger.info("INPUTS:")
-                logger.info(inputs)
-                logger.info("outputs:")
-                logger.info(outputs)
-                logger.info("targets:")
-                logger.info(targets)
+                outputs = self.model(inputs)
 
                 loss = criterion(outputs, targets)
                 loss.backward()
+                # self.fabric.backward(loss)
+
+                # Compress gradients
+                grads = [p.grad for p in self.model.parameters()]
+                compressed_grads = dgc(grads)
+                # Manually update model parameters
+                for p, compressed_grad in zip(self.model.parameters(), compressed_grads):
+                    p.data.add_(-self.lr, compressed_grad)
 
                 optimizer.step()
 
@@ -149,18 +119,28 @@ class FlockModel:
                 f"Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
             )
 
-        logger.info(f"--------- Trainer compressing local model ---------")
-        model_compressed_dict = {}
-        for name, param in model.named_parameters():
-            compressed_tensor, ctx = self.compressor.compress(param, name)
-            model_compressed_dict[name] = {
-                "compressed_tensor": compressed_tensor,
-                "ctx": ctx,
-            }
+        # size_after_compression = 0
+        # for p in self.model.parameters():
+        #     if p.grad is not None:
+        #         size_after_compression += p.grad.element_size() * p.grad.nelement()
+        #     else:
+        #         logger.info("None grad")
+        # delta_compression_size = size_before_compression - size_after_compression
+        # logger.info(f"Delta Compression size: {self.payload_size_reformat(delta_compression_size)}, "
+        #             f"compressed ratio: {round(delta_compression_size / size_before_compression * 100,2) if round(delta_compression_size / size_before_compression * 100,2) !=0 else 0}%, "
+        #             f"original size: {self.payload_size_reformat(size_before_compression)}, "
+        #             f"compressed size: {self.payload_size_reformat(size_after_compression)}")
 
         buffer = io.BytesIO()
-        torch.save(model_compressed_dict, buffer)
-        return buffer.getvalue()
+        torch.save(self.model.state_dict(), buffer)
+        # return buffer.getvalue()
+        compressed_payload = buffer.getvalue()
+        logger.info(f"Delta Compression size: {self.payload_size_reformat(sys.getsizeof(uncompressed_payload) -  sys.getsizeof(compressed_payload))}, "
+                    f"compressed ratio: {round((sys.getsizeof(uncompressed_payload) -  sys.getsizeof(compressed_payload)) / sys.getsizeof(uncompressed_payload) * 100,2)}%, "
+                    f"original size: {self.payload_size_reformat(uncompressed_payload)}, "
+                    f"compressed size: {self.payload_size_reformat(compressed_payload)}")
+
+        return compressed_payload
 
     """
     evaluate() should:
@@ -171,22 +151,13 @@ class FlockModel:
     """
 
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
-        data_loader = self.process_dataset(dataset)
+        data_loader = self.process_dataset(self.test_set)
         criterion = torch.nn.BCELoss()
 
-        logger.info(f"--------- Evaluator decompressing global model ---------")
-        model = self.get_starting_model()
         if parameters is not None:
-            model_compressed_dict = torch.load(io.BytesIO(parameters))
-            for name, param in model.named_parameters():
-                decompressed_tensor = self.compressor.decompress(
-                    model_compressed_dict[name]["compressed_tensor"],
-                    model_compressed_dict[name]["ctx"],
-                )
-                param.data = decompressed_tensor
-
-        model.to(self.device)
-        model.eval()
+            self.model.load_state_dict(torch.load(io.BytesIO(parameters)))
+        self.model.to(self.device)
+        self.model.eval()
 
         test_correct = 0
         test_loss = 0.0
@@ -194,23 +165,15 @@ class FlockModel:
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(data_loader):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
-                outputs = model(inputs)
-                logger.info("INPUTS:")
-                logger.info(inputs)
-                logger.info("outputs:")
-                logger.info(outputs)
-                logger.info("targets:")
-                logger.info(targets)
+                outputs = self.model(inputs)
                 loss = criterion(outputs, targets)
 
                 test_loss += loss.item() * inputs.size(0)
                 predicted = torch.round(outputs).squeeze()
                 test_total += targets.size(0)
                 test_correct += (predicted == targets.squeeze()).sum().item()
-        accuracy = test_correct / test_total
-        logger.info(
-            f"Model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
-        )
+        accuracy = round(100.0 * test_correct / test_total, 2)
+        logger.info(f"Model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}")
         return accuracy
 
     """
@@ -219,148 +182,43 @@ class FlockModel:
     """
 
     def aggregate(self, parameters_list: list[bytes]) -> bytes:
-        model = self.get_starting_model()
-
-        logger.info(f"--------- Aggregator decompressing aggregated model ---------")
-        decompressed_parameters_list = []
-        for params in parameters_list:
-            model_compressed_dict = torch.load(io.BytesIO(params))
-            for name, param in model.named_parameters():
-                decompressed_tensor = self.compressor.decompress(
-                    model_compressed_dict[name]["compressed_tensor"],
-                    model_compressed_dict[name]["ctx"],
-                )
-                param.data = decompressed_tensor
-            decompressed_parameters_list.append(copy.deepcopy(model.state_dict()))
-
-        averaged_params_template = decompressed_parameters_list[0]
+        parameters_list = [
+            torch.load(io.BytesIO(parameters)) for parameters in parameters_list
+        ]
+        averaged_params_template = parameters_list[0]
         for k in averaged_params_template.keys():
             temp_w = []
-            for local_w in decompressed_parameters_list:
+            for local_w in parameters_list:
                 temp_w.append(local_w[k])
             averaged_params_template[k] = sum(temp_w) / len(temp_w)
-
-        model.load_state_dict(averaged_params_template)
-
-        logger.info(f"--------- Aggregator compressing aggregated model ---------")
-        model_compressed_dict = {}
-        for name, param in model.named_parameters():
-            compressed_tensor, ctx = self.compressor.compress(param, name)
-            model_compressed_dict[name] = {
-                "compressed_tensor": compressed_tensor,
-                "ctx": ctx,
-            }
 
         # Create a buffer
         buffer = io.BytesIO()
 
         # Save state dict to the buffer
-        torch.save(model_compressed_dict, buffer)
+        torch.save(averaged_params_template, buffer)
 
         # Get the byte representation
         aggregated_parameters = buffer.getvalue()
 
         return aggregated_parameters
 
-
-def single_ml():
-    """
-    Hyper parameters
-    """
-    batch_size = 128
-    epochs = 100
-    lr = 0.0001
-    # device = torch.device(f"cuda:{1 if torch.cuda.is_available() else 'cpu'}")
-    device = torch.device("cpu")
-
-    # for test
-    client_id = 1
-
-    # Data preparation for test
-    from data_preprocessing import split_dataset, save_dataset
-
-    datasets = split_dataset("data/creditcard.csv", num_clients=50, test_rate=0.2)
-    save_dataset(datasets, "data")
-
-    train_set = load_dataset(f"data/train_{client_id}.csv")
-    test_set = load_dataset(f"data/test_{client_id}.csv")
-
-    train_loader = get_loader(
-        train_set, batch_size=batch_size, shuffle=True, drop_last=False
-    )
-    test_loader = get_loader(
-        test_set, batch_size=batch_size, shuffle=True, drop_last=False
-    )
-
-    """
-        Create model
-    """
-    # a column for label
-    model = CreditFraudNetMLP(num_features=train_set.shape[1] - 1, num_classes=1)
-
-    """
-        Single client training
-    """
-
-    model.to(device)
-    model.train()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = torch.nn.BCELoss()
-
-    pro_bar = tqdm(range(epochs))
-
-    for _, epoch in enumerate(pro_bar):
-        train_loss = 0.0
-        train_correct = 0
-        train_total = 0
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
-            optimizer.zero_grad()
-
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
-
-            loss = criterion(outputs, targets)
-            loss.backward()
-
-            optimizer.step()
-
-            train_loss += loss.item() * inputs.size(0)
-            predicted = torch.round(outputs).squeeze()
-            train_total += targets.size(0)
-            train_correct += (predicted == targets.squeeze()).sum().item()
-
-        pro_bar.set_description(
-            f"Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
-        )
-
-        if epochs % 10 == 0:
-            model.eval()
-            test_correct = 0
-            test_loss = 0.0
-            test_total = 0
-            with torch.no_grad():
-                for batch_idx, (inputs, targets) in enumerate(test_loader):
-                    inputs, targets = inputs.to(device), targets.to(device)
-                    outputs = model(inputs)
-                    loss = criterion(outputs, targets)
-
-                    test_loss += loss.item() * inputs.size(0)
-                    predicted = torch.round(outputs).squeeze()
-                    test_total += targets.size(0)
-                    test_correct += (predicted == targets.squeeze()).sum().item()
-
-            logger.info(
-                f"Test Epoch: {epoch}, Acc: {round(100.0 * test_correct / test_total, 2)}, Loss: {round(test_loss / test_total, 4)}"
-            )
-            model.train()
+    def payload_size_reformat(self, payload):
+        # Monitor size of model
+        if int(sys.getsizeof(payload) / 1024) == 0:
+            return f'{round(sys.getsizeof(payload),3)} b'
+        elif int(sys.getsizeof(payload) / 1024 / 1024) == 0:
+            return f'{round(sys.getsizeof(payload) / 1024,3)} Kb'
+        elif int(sys.getsizeof(payload) / 1024 / 1024 / 1024) == 0:
+            return f'{round(sys.getsizeof(payload) / 1024 / 1024,3)} Mb'
+        else:
+            return f'{round(sys.getsizeof(payload) / 1024 / 1024 / 1024,3)} Gb'
 
 
 if __name__ == "__main__":
     """
     Hyper parameters
     """
-    features = 30
     batch_size = 128
     epochs = 100
     lr = 0.0001
@@ -369,18 +227,18 @@ if __name__ == "__main__":
         "1",
     ]
 
-    from data_preprocessing import split_dataset, save_dataset
-
-    datasets = split_dataset("data/creditcard.csv", num_clients=50, test_rate=0.2)
-    save_dataset(datasets, "data")
+    # # Add Fabric support
+    # fabric = Fabric(accelerator="auto", devices=-1, strategy="ddp")
+    # fabric.launch()
 
     flock_model = FlockModel(
         classes,
-        features,
+        # fabric_instance=fabric,
         batch_size=batch_size,
         epochs=epochs,
         lr=lr,
     )
+
     flock.register_train(flock_model.train)
     flock.register_evaluate(flock_model.evaluate)
     flock.register_aggregate(flock_model.aggregate)
