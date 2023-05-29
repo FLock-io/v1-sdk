@@ -70,6 +70,7 @@ class FlockModel:
         )
 
     def get_starting_model(self):
+        torch.manual_seed(0)
         return CreditFraudNetMLP(num_features=self.features, num_classes=1)
 
     """
