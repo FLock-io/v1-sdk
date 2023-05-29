@@ -24,7 +24,6 @@ class FlockModel:
         classes,
         features,
         fabric_instance=None,
-        image_size=84,
         batch_size=256,
         epochs=1,
         lr=0.03,
@@ -33,7 +32,6 @@ class FlockModel:
         """
         Hyper parameters
         """
-        self.image_size = image_size
         self.batch_size = batch_size
         self.epochs = epochs
         self.features = features
@@ -90,7 +88,7 @@ class FlockModel:
         if parameters is not None:
             compressed_grads = torch.load(io.BytesIO(parameters))
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(compressed_grad)
+                p.data.add_(-self.lr * compressed_grad)
 
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
@@ -107,7 +105,7 @@ class FlockModel:
             train_correct = 0
             train_total = 0
             for batch_idx, (inputs, targets) in enumerate(data_loader):
-                optimizer.zero_grad()
+#                 optimizer.zero_grad()
 
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
@@ -164,7 +162,7 @@ class FlockModel:
         if compressed_gradients is not None:
             compressed_grads = torch.load(io.BytesIO(compressed_gradients))
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(compressed_grad)
+                p.data.add_(-self.lr * compressed_grad)
 
         model.to(self.device)
         model.eval()
