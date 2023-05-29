@@ -32,7 +32,6 @@ def split_dataset(data_file_path, num_clients=50, test_rate=0.2):
     return train_tests
     """
 
-
 def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
     X_df = dataset_df.iloc[:, :-1]
     y_df = dataset_df.iloc[:, -1]
@@ -40,15 +39,28 @@ def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
     X_tensor = torch.tensor(X_df.values, dtype=torch.float32)
     y_tensor = torch.tensor(y_df.values, dtype=torch.float32)
 
-    X_tensor = X_tensor.unsqueeze(1)
-    X_tensor = X_tensor.transpose(
-        1, 2
-    )  # Now X_tensor has shape [batch_size, num_features, seq_length]
     y_tensor = y_tensor.unsqueeze(1)
     dataset_in_dataset = TensorDataset(X_tensor, y_tensor)
     return DataLoader(
         dataset_in_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last
     )
+
+# def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
+#     X_df = dataset_df.iloc[:, :-1]
+#     y_df = dataset_df.iloc[:, -1]
+
+#     X_tensor = torch.tensor(X_df.values, dtype=torch.float32)
+#     y_tensor = torch.tensor(y_df.values, dtype=torch.float32)
+
+#     X_tensor = X_tensor.unsqueeze(1)
+#     X_tensor = X_tensor.transpose(
+#         1, 2
+#     )  # Now X_tensor has shape [batch_size, num_features, seq_length]
+#     y_tensor = y_tensor.unsqueeze(1)
+#     dataset_in_dataset = TensorDataset(X_tensor, y_tensor)
+#     return DataLoader(
+#         dataset_in_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last
+#     )
 
 
 def save_dataset(datasets, dataset_dir="data"):
