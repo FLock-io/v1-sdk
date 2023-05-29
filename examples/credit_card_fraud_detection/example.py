@@ -55,7 +55,7 @@ class FlockModel:
             device = "cuda"
         else:
             device = "cpu"
-        self.device = torch.device(device)
+        self.device = torch.device("cpu")
 
         """
             Training setting
@@ -81,7 +81,7 @@ class FlockModel:
     """
 
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
-        data_loader = self.process_dataset(self.train_set)
+        data_loader = self.process_dataset(dataset)
         # data_loader = self.fabric.setup_dataloader(data_loader)
 
         model = self.get_starting_model()
@@ -156,7 +156,7 @@ class FlockModel:
     def evaluate(
         self, compressed_gradients: bytes | None, dataset: list[dict]
     ) -> float:
-        data_loader = self.process_dataset(self.test_set)
+        data_loader = self.process_dataset(dataset)
         model = self.get_starting_model()
         criterion = torch.nn.BCELoss()
 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     Hyper parameters
     """
     batch_size = 128
-    epochs = 100
+    epochs = 1
     lr = 0.0001
     classes = [
         "0",
@@ -258,7 +258,14 @@ if __name__ == "__main__":
         lr=lr,
     )
 
-    flock.register_train(flock_model.train)
-    flock.register_evaluate(flock_model.evaluate)
-    flock.register_aggregate(flock_model.aggregate)
-    flock.run()
+    import json
+
+    with open("test_dataset.json", "r") as f:
+        dataset = json.loads(f.read())
+
+    compressed_gradient = flock_model.train(None, dataset)
+    flock_model.evaluate(compressed_gradient, dataset)
+    # flock.register_train(flock_model.train)
+    # flock.register_evaluate(flock_model.evaluate)
+    # flock.register_aggregate(flock_model.aggregate)
+    # flock.run()
