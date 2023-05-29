@@ -28,6 +28,7 @@ class FlockModel:
         epochs=1,
         lr=0.03,
         client_id=1,
+        output_num_classes=1,
     ):
         """
         Hyper parameters
@@ -38,7 +39,8 @@ class FlockModel:
         self.classes = classes
         self.class_to_idx = {_class: idx for idx, _class in enumerate(self.classes)}
         self.lr = lr
-
+        self.output_num_classes = output_num_classes
+        
         """
             Data prepare
         """
@@ -255,6 +257,7 @@ if __name__ == "__main__":
         batch_size=batch_size,
         epochs=epochs,
         lr=lr,
+        output_num_classes=1,
     )
 
     import json
