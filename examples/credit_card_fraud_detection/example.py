@@ -96,11 +96,7 @@ class FlockModel:
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
         criterion = torch.nn.BCELoss()
         model.to(self.device)
-
-        uncompressed_buffer = io.BytesIO()
-        torch.save(model.state_dict(), uncompressed_buffer)
-        uncompressed_payload = uncompressed_buffer.getvalue()
-
+        
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             train_loss = 0.0
@@ -131,13 +127,18 @@ class FlockModel:
                 f"Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
             )
 
-        grads = [p.grad for p in model.parameters()]
-        compressed_grads = dgc(grads)
+        uncompressed_grads = [p.grad for p in model.parameters()]
+        uncompressed_buffer = io.BytesIO()
+        torch.save(uncompressed_grads, uncompressed_buffer)
+        uncompressed_payload = uncompressed_buffer.getvalue()
+
+        compressed_grads = dgc(uncompressed_grads)
 
         compressed_buffer = io.BytesIO()
         torch.save(compressed_grads, compressed_buffer)
         # return buffer.getvalue()
         compressed_payload = compressed_buffer.getvalue()
+
         logger.info(
             f"Delta Compression size: {self.payload_size_reformat(len(uncompressed_payload) - len(compressed_payload))}, "
             f"compressed ratio: {round((len(uncompressed_payload) - len(compressed_payload)) / len(uncompressed_payload) * 100, 2)}%, "
