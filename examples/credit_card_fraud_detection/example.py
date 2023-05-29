@@ -89,7 +89,7 @@ class FlockModel:
         if parameters is not None:
             compressed_grads = torch.load(io.BytesIO(parameters))
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(-self.lr * compressed_grad)
+                p.data.add_(compressed_grad)
 
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
@@ -163,7 +163,7 @@ class FlockModel:
         if compressed_gradients is not None:
             compressed_grads = torch.load(io.BytesIO(compressed_gradients))
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(-self.lr * compressed_grad)
+                p.data.add_(compressed_grad)
 
         model.to(self.device)
         model.eval()
