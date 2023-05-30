@@ -28,5 +28,13 @@ def dgc(grads, sparsity: float = 0.9):
         compressed_grads.append(compressed_grad)
         start = end
     sparse_tensors = [compressed_grad.to_sparse() for compressed_grad in compressed_grads]
-
     return sparse_tensors
+
+
+if __name__ == '__main__':
+    grads = [torch.randn((10, 10)), torch.randn((20, 20)), torch.randn((30, 30))]
+
+    compressed_grads = dgc(grads, sparsity=0.9)
+    total_gradients = sum([grad.numel() for grad in grads])
+    total_compressed_gradients = sum([compressed_grad.values().numel() for compressed_grad in compressed_grads])
+    print(f'Compress rate. {(1 - total_compressed_gradients / total_gradients) * 100}')

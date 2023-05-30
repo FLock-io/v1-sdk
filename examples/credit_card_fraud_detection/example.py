@@ -1,34 +1,31 @@
-import torch
 import io
-from loguru import logger
-from flock_sdk import FlockSDK
-import copy
-import sys
 
+import torch
 import torch.utils.data
 import torch.utils.data.distributed
-from data_preprocessing import load_dataset, get_loader
-from models.basic_cnn import CreditFraudNetMLP
-from tqdm import tqdm
-from compresser.dgc import dgc
-
+from loguru import logger
 # from lightning import Fabric
 from pandas import DataFrame
+
+from compresser.dgc import dgc
+from data_preprocessing import get_loader
+from flock_sdk import FlockSDK
+from models.basic_cnn import CreditFraudNetMLP
 
 flock = FlockSDK()
 
 
 class FlockModel:
     def __init__(
-        self,
-        classes,
-        features,
-        fabric_instance=None,
-        batch_size=256,
-        epochs=1,
-        lr=0.03,
-        client_id=1,
-        output_num_classes=1,
+            self,
+            classes,
+            features,
+            fabric_instance=None,
+            batch_size=256,
+            epochs=1,
+            lr=0.03,
+            client_id=1,
+            output_num_classes=1,
     ):
         """
         Hyper parameters
@@ -40,7 +37,7 @@ class FlockModel:
         self.class_to_idx = {_class: idx for idx, _class in enumerate(self.classes)}
         self.lr = lr
         self.output_num_classes = output_num_classes
-        
+
         """
             Data prepare
         """
@@ -96,14 +93,14 @@ class FlockModel:
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
         criterion = torch.nn.BCELoss()
         model.to(self.device)
-        
+
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             train_loss = 0.0
             train_correct = 0
             train_total = 0
             for batch_idx, (inputs, targets) in enumerate(data_loader):
-#                 optimizer.zero_grad()
+                #                 optimizer.zero_grad()
 
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
@@ -131,14 +128,8 @@ class FlockModel:
         uncompressed_buffer = io.BytesIO()
         torch.save(uncompressed_grads, uncompressed_buffer)
         uncompressed_payload = uncompressed_buffer.getvalue()
-
+        # Perform DGC
         compressed_grads = dgc(uncompressed_grads)
-        
-        # 计算原始梯度和压缩梯度的平均值
-        avg_grad = sum(grad.abs().mean() for grad in uncompressed_grads) / len(uncompressed_grads)
-        avg_compressed_grad = sum(grad.abs().mean() for grad in compressed_grads) / len(compressed_grads)
-        print(f"Average grad: {avg_grad:.6f}, average compressed grad: {avg_compressed_grad:.6f}")
-            
         compressed_buffer = io.BytesIO()
         torch.save(compressed_grads, compressed_buffer)
         # return buffer.getvalue()
@@ -161,7 +152,7 @@ class FlockModel:
     """
 
     def evaluate(
-        self, compressed_gradients: bytes | None, dataset: list[dict]
+            self, compressed_gradients: bytes | None, dataset: list[dict]
     ) -> float:
         data_loader = self.process_dataset(dataset)
         model = self.get_starting_model()
@@ -205,13 +196,10 @@ class FlockModel:
             for compressed_grads_bytes in parameters_list
         ]
 
-        # logger.info(f"len gradients_list {len(gradients_list)}")
-        # logger.info(f"gradients_list : {gradients_list}")
-        #
-        # logger.info(f"gradients_list[0][0].shape : {gradients_list[0][0].shape}")
-        # logger.info(f"gradients_list[1][0].shape : {gradients_list[1][0].shape}")
-
         transposed_gradients_list = list(map(list, zip(*gradients_list)))
+        # Load with dense tensor.
+        transposed_gradients_list = list(map(lambda compressed_tensor: compressed_tensor.to_dense(),
+                                             transposed_gradients_list))
 
         averaged_gradients = [
             torch.stack(tensors).mean(dim=0) for tensors in transposed_gradients_list
@@ -231,13 +219,13 @@ class FlockModel:
     def payload_size_reformat(self, payload):
         # Monitor size of model
         if int(payload / 1024) == 0:
-            return f"{round(payload,3)} b"
+            return f"{round(payload, 3)} b"
         elif int(payload / 1024 / 1024) == 0:
-            return f"{round(payload / 1024,3)} Kb"
+            return f"{round(payload / 1024, 3)} Kb"
         elif int(payload / 1024 / 1024 / 1024) == 0:
-            return f"{round(payload / 1024 / 1024,3)} Mb"
+            return f"{round(payload / 1024 / 1024, 3)} Mb"
         else:
-            return f"{round(payload / 1024 / 1024 / 1024,3)} Gb"
+            return f"{round(payload / 1024 / 1024 / 1024, 3)} Gb"
 
 
 if __name__ == "__main__":
