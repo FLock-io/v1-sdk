@@ -16,17 +16,15 @@ flock = FlockSDK()
 
 
 class FlockModel:
-    def __init__(
-            self,
-            classes,
-            features,
-            fabric_instance=None,
-            batch_size=256,
-            epochs=1,
-            lr=0.03,
-            client_id=1,
-            output_num_classes=1,
-    ):
+    def __init__(self,
+                 classes,
+                 features,
+                 fabric_instance=None,
+                 batch_size=256,
+                 epochs=1,
+                 lr=0.03,
+                 client_id=1,
+                 output_num_classes=1):
         """
         Hyper parameters
         """
@@ -85,7 +83,9 @@ class FlockModel:
         model = self.get_starting_model()
 
         if parameters is not None:
-            compressed_grads = torch.load(io.BytesIO(parameters))
+            compressed_grads_sparse = torch.load(io.BytesIO(parameters))
+            # Transform to dense representation.
+            compressed_grads = [grad.to_dense() for grad in compressed_grads_sparse]
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
                 p.data.add_(-self.lr * compressed_grad)
 
