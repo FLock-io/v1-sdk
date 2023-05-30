@@ -133,7 +133,12 @@ class FlockModel:
         uncompressed_payload = uncompressed_buffer.getvalue()
 
         compressed_grads = dgc(uncompressed_grads)
-
+        
+        # 计算原始梯度和压缩梯度的平均值
+        avg_grad = sum(grad.abs().mean() for grad in uncompressed_grads) / len(uncompressed_grads)
+        avg_compressed_grad = sum(grad.abs().mean() for grad in compressed_grads) / len(compressed_grads)
+        print(f"Average grad: {avg_grad:.6f}, average compressed grad: {avg_compressed_grad:.6f}")
+            
         compressed_buffer = io.BytesIO()
         torch.save(compressed_grads, compressed_buffer)
         # return buffer.getvalue()
