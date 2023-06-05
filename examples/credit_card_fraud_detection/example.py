@@ -1,30 +1,37 @@
-import io
-
 import torch
+import io
+from loguru import logger
+from flock_sdk import FlockSDK
+import copy
+import sys
+
 import torch.utils.data
 import torch.utils.data.distributed
-from loguru import logger
+from data_preprocessing import load_dataset, get_loader
+from models.basic_cnn import CreditFraudNetMLP
+from tqdm import tqdm
+from compresser.dgc import dgc
+
 # from lightning import Fabric
 from pandas import DataFrame
 
-from compresser.dgc import dgc
-from data_preprocessing import get_loader
-from flock_sdk import FlockSDK
-from models.basic_cnn import CreditFraudNetMLP
-
 flock = FlockSDK()
 
+import random
+import numpy as np
 
 class FlockModel:
-    def __init__(self,
-                 classes,
-                 features,
-                 fabric_instance=None,
-                 batch_size=256,
-                 epochs=1,
-                 lr=0.03,
-                 client_id=1,
-                 output_num_classes=1):
+    def __init__(
+            self,
+            classes,
+            features,
+            fabric_instance=None,
+            batch_size=256,
+            epochs=1,
+            lr=0.03,
+            client_id=1,
+            output_num_classes=1,
+    ):
         """
         Hyper parameters
         """
@@ -40,8 +47,8 @@ class FlockModel:
             Data prepare
         """
         # for test
-        # self.train_set = load_dataset(f"data/train_{client_id}.csv")
-        # self.test_set = load_dataset(f"data/test_{client_id}.csv")
+        self.train_set = load_dataset(f"data/train_{client_id}.csv")
+        self.test_set = load_dataset(f"data/test_{client_id}.csv")
 
         """
             Device setting
@@ -57,6 +64,7 @@ class FlockModel:
         """
         # self.fabric = fabric_instance
 
+
     def process_dataset(self, dataset: list[dict], transform=None):
         logger.debug("Processing dataset")
         dataset_df = DataFrame.from_records(dataset)
@@ -65,7 +73,13 @@ class FlockModel:
         )
 
     def get_starting_model(self):
-        torch.manual_seed(0)
+        # torch.manual_seed(0)
+        seed = 0
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
         return CreditFraudNetMLP(num_features=self.features, num_classes=1)
 
     """
@@ -76,21 +90,20 @@ class FlockModel:
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
+    def train(self, compressed_gradients: bytes | None, dataset: list[dict]) -> bytes:
         data_loader = self.process_dataset(dataset)
         # data_loader = self.fabric.setup_dataloader(data_loader)
 
         model = self.get_starting_model()
 
-        if parameters is not None:
-            compressed_grads_sparse = torch.load(io.BytesIO(parameters))
-            # Transform to dense representation.
+        if compressed_gradients is not None:
+            compressed_grads_sparse = torch.load(io.BytesIO(compressed_gradients))
             compressed_grads = [grad.to_dense() for grad in compressed_grads_sparse]
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(-self.lr * compressed_grad)
+                p.data -= self.lr * compressed_grad
 
         model.train()
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
+        optimizer = torch.optim.SGD(model.parameters(), lr=self.lr)
         criterion = torch.nn.BCELoss()
         model.to(self.device)
 
@@ -108,7 +121,6 @@ class FlockModel:
                 loss = criterion(outputs, targets)
                 loss.backward()
                 # self.fabric.backward(loss)
-
                 optimizer.step()
 
                 train_loss += loss.item() * inputs.size(0)
@@ -120,6 +132,8 @@ class FlockModel:
                         f"Batch {batch_idx}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
                     )
 
+                break
+
             logger.info(
                 f"Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
             )
@@ -128,12 +142,20 @@ class FlockModel:
         uncompressed_buffer = io.BytesIO()
         torch.save(uncompressed_grads, uncompressed_buffer)
         uncompressed_payload = uncompressed_buffer.getvalue()
-        # Perform DGC
+
         compressed_grads = dgc(uncompressed_grads)
+
+        # avg_grad = sum(grad.abs().mean() for grad in uncompressed_grads) / len(uncompressed_grads)
+        # avg_compressed_grad = sum(grad.abs().mean() for grad in compressed_grads) / len(compressed_grads)
+        # print(f"Average grad: {avg_grad:.6f}, average compressed grad: {avg_compressed_grad:.6f}")
         compressed_buffer = io.BytesIO()
         torch.save(compressed_grads, compressed_buffer)
-        # return buffer.getvalue()
         compressed_payload = compressed_buffer.getvalue()
+
+        # TODO optimize the compression rate
+        # total_gradients = sum([grad.numel() for grad in uncompressed_grads])
+        # total_compressed_gradients = sum([compressed_grad.values().numel() for compressed_grad in compressed_grads])
+        # print(f'Compress rate. {(1 - total_compressed_gradients / total_gradients) * 100}')
 
         logger.info(
             f"Delta Compression size: {self.payload_size_reformat(len(uncompressed_payload) - len(compressed_payload))}, "
@@ -158,10 +180,13 @@ class FlockModel:
         model = self.get_starting_model()
         criterion = torch.nn.BCELoss()
 
+        logger.debug(f"evaluate model: {id(model)}")
+
         if compressed_gradients is not None:
-            compressed_grads = torch.load(io.BytesIO(compressed_gradients))
+            compressed_grads_sparse = torch.load(io.BytesIO(compressed_gradients))
+            compressed_grads = [grad.to_dense() for grad in compressed_grads_sparse]
             for p, compressed_grad in zip(model.parameters(), compressed_grads):
-                p.data.add_(-self.lr * compressed_grad)
+                p.data -= self.lr * compressed_grad
 
         model.to(self.device)
         model.eval()
@@ -171,6 +196,7 @@ class FlockModel:
         test_total = 0
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(data_loader):
+                logger.debug(f"Evaluate x {inputs}")
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
@@ -179,10 +205,14 @@ class FlockModel:
                 predicted = torch.round(outputs).squeeze()
                 test_total += targets.size(0)
                 test_correct += (predicted == targets.squeeze()).sum().item()
+
+                break
+
         accuracy = test_correct / test_total
         logger.info(
             f"Model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
         )
+
         return accuracy
 
     """
@@ -190,10 +220,10 @@ class FlockModel:
     aggregate them using avg and output the aggregated parameters as bytes.
     """
 
-    def aggregate(self, parameters_list: list[bytes]) -> bytes:
+    def aggregate(self, compressed_gradients_list: list[bytes]) -> bytes:
         gradients_list = [
             torch.load(io.BytesIO(compressed_grads_bytes))
-            for compressed_grads_bytes in parameters_list
+            for compressed_grads_bytes in compressed_gradients_list
         ]
 
         transposed_gradients_list = list(map(list, zip(*gradients_list)))
@@ -227,6 +257,13 @@ class FlockModel:
         else:
             return f"{round(payload / 1024 / 1024 / 1024, 3)} Gb"
 
+    @staticmethod
+    def compare_models(model1, model2):
+        for (name1, param1), (name2, param2) in zip(model1.named_parameters(), model2.named_parameters()):
+            if name1 == name2:
+                print(f'Parameter: {name1}')
+                print(f'Difference: {torch.sum(param1.data - param2.data)}')
+
 
 if __name__ == "__main__":
     """
@@ -234,7 +271,7 @@ if __name__ == "__main__":
     """
     batch_size = 128
     epochs = 1
-    lr = 0.0001
+    lr = 0.003
     classes = [
         "0",
         "1",
@@ -260,6 +297,7 @@ if __name__ == "__main__":
         dataset = json.loads(f.read())
 
     compressed_gradient = flock_model.train(None, dataset)
+    # compressed_gradient = flock_model.train(compressed_gradient, dataset)
     flock_model.evaluate(compressed_gradient, dataset)
     # flock.register_train(flock_model.train)
     # flock.register_evaluate(flock_model.evaluate)
