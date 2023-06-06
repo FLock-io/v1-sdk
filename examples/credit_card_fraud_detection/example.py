@@ -132,8 +132,6 @@ class FlockModel:
                         f"Batch {batch_idx}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
                     )
 
-                break
-
             logger.info(
                 f"Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}"
             )
@@ -206,8 +204,6 @@ class FlockModel:
                 test_total += targets.size(0)
                 test_correct += (predicted == targets.squeeze()).sum().item()
 
-                break
-
         accuracy = test_correct / test_total
         logger.info(
             f"Model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
@@ -263,6 +259,11 @@ class FlockModel:
             if name1 == name2:
                 print(f'Parameter: {name1}')
                 print(f'Difference: {torch.sum(param1.data - param2.data)}')
+
+            if not torch.allclose(param1, param2, atol=1e-07):
+                print(f"Parameter: {name1} Weights are not the same!")
+            else:
+                print(f"Parameter: {name1} Weights are the same!")
 
 
 if __name__ == "__main__":
