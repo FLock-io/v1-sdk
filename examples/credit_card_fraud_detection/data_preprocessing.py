@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -17,8 +16,9 @@ def split_dataset(data_file_path, num_clients=50, test_rate=0.2):
 
     split_dfs = []
     start = 0
+    chunk_size = len(df) // num_clients
     for proportion in proportions:
-        size = int(proportion * len(df))
+        size = chunk_size
         split_dfs.append(df.iloc[start : start + size])
         start += size
 
@@ -32,6 +32,7 @@ def split_dataset(data_file_path, num_clients=50, test_rate=0.2):
     return train_tests
     """
 
+
 def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
     X_df = dataset_df.iloc[:, :-1]
     y_df = dataset_df.iloc[:, -1]
@@ -44,6 +45,7 @@ def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
     return DataLoader(
         dataset_in_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last
     )
+
 
 # def get_loader(dataset_df, batch_size=128, shuffle=True, drop_last=False):
 #     X_df = dataset_df.iloc[:, :-1]
@@ -69,3 +71,8 @@ def save_dataset(datasets, dataset_dir="data"):
 
     for i, dataset in enumerate(datasets):
         dataset.to_json(f"data/client_{i}.json", orient="records")
+
+
+if __name__ == "__main__":
+    datasets = split_dataset("data/creditcard.csv", 6)
+    save_dataset(datasets)

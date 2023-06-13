@@ -11,7 +11,7 @@ torchvision==0.15.2+cpu; sys_platform == 'linux'
 
 # For developer
 pandas
-scikit-learn
+# scikit-learn
 tqdm
 numpy
-lightning
+# lightning
