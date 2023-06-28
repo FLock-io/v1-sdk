@@ -133,7 +133,6 @@ for epoch in range(epochs):
             # p.data.add_(-self.lr * compressed_grad)
             p.data -= lr * compressed_grad
 
-        break
 
     logger.info(
         f'Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}'
