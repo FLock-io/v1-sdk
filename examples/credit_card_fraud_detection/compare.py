@@ -82,7 +82,7 @@ def process_dataset(dataset: list[dict], transform=None):
 
 import json
 
-with open('test_dataset.json', 'r') as f:
+with open('test_dataset_new.json', 'r') as f:
     dataset = json.loads(f.read())
 
 data_loader = process_dataset(dataset)
@@ -150,4 +150,38 @@ print('==============================================')
 
 print("===================differtence with and no DGC=====================")
 compare_models(eval_model_1, eval_model_2)
+print('==============================================')
+
+
+def evaluate(model, data_loader) -> float:
+    model.eval()
+    test_correct = 0
+    test_loss = 0.0
+    test_total = 0
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(data_loader):
+            inputs, targets = inputs.to(device)[:,1:], targets.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            test_loss += loss.item() * inputs.size(0)
+            predicted = torch.round(outputs).squeeze()
+            test_total += targets.size(0)
+            test_correct += (predicted == targets.squeeze()).sum().item()
+
+    accuracy = test_correct / test_total
+    logger.info(
+        f'Model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}'
+    )
+    return accuracy
+
+print('==============================================')
+evaluate(train_model, data_loader)
+print('==============================================')
+
+print("===================with DGC=====================")
+evaluate(eval_model_1, data_loader)
+print('==============================================')
+
+print("===================differtence with and no DGC=====================")
+evaluate(eval_model_2, data_loader)
 print('==============================================')
