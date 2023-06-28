@@ -66,10 +66,10 @@ def get_model():
 
 
 batch_size = 128
-epochs = 3
+epochs = 100
 lr = 0.0003
 device = torch.device('cpu')
-features = 30
+features = 29
 
 
 
@@ -100,7 +100,7 @@ train_model.to(device)
 eval_model_1.to(device)
 eval_model_2.to(device)
 
-optimizer = torch.optim.Adam(train_model.parameters(), lr=lr, weight_decay=1e-5)
+optimizer = torch.optim.SGD(train_model.parameters(), lr=lr)
 criterion = torch.nn.BCELoss()
 
 for epoch in range(epochs):
@@ -109,9 +109,9 @@ for epoch in range(epochs):
     train_correct = 0
     train_total = 0
     for batch_idx, (inputs, targets) in enumerate(data_loader):
-        #                 optimizer.zero_grad()
-        # logger.debug(f'Train x {inputs}')
-        inputs, targets = inputs.to(device), targets.to(device)
+
+        # remove Time parameter
+        inputs, targets = inputs.to(device)[:,1:], targets.to(device)
         outputs = train_model(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
@@ -140,14 +140,14 @@ for epoch in range(epochs):
     )
 
 
-    # print('==============================================')
-    compare_models(train_model, eval_model_1)
-    print('==============================================')
+# print('==============================================')
+compare_models(train_model, eval_model_1)
+print('==============================================')
 
-    print("===================with DGC=====================")
-    compare_models(train_model, eval_model_2)
-    print('==============================================')
+print("===================with DGC=====================")
+compare_models(train_model, eval_model_2)
+print('==============================================')
 
-    print("===================differtence with and no DGC=====================")
-    compare_models(eval_model_1, eval_model_2)
-    print('==============================================')
+print("===================differtence with and no DGC=====================")
+compare_models(eval_model_1, eval_model_2)
+print('==============================================')
