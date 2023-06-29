@@ -52,7 +52,6 @@ class FlockModel:
         )
 
     def get_starting_model(self):
-        # torch.manual_seed(0)
         seed = 0
         random.seed(seed)
         np.random.seed(seed)
@@ -83,7 +82,6 @@ class FlockModel:
         criterion = torch.nn.BCELoss()
         model.to(self.device)
 
-        # pro_bar = tqdm(range(self.epochs))
         for epoch in range(self.epochs):
             logger.debug(f"Epoch {epoch}")
             train_loss = 0.0
@@ -190,10 +188,6 @@ if __name__ == "__main__":
     """
     batch_size = 128
     epochs = 1
-    # lr = 0.00000001 Too low
-    # lr = 0.000001  Too high
-    # lr = 0.0000001 Too low
-    # lr = 0.00000035 Better
     lr = 0.000001
     classes = [
         "0",
