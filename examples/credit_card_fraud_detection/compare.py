@@ -103,6 +103,10 @@ eval_model_2.to(device)
 optimizer = torch.optim.SGD(train_model.parameters(), lr=lr)
 criterion = torch.nn.BCELoss()
 
+
+uncompressed_grads_accumulate = None
+compressed_grads_accumulate = None
+
 for epoch in range(epochs):
     logger.debug(f'Epoch {epoch}')
     train_loss = 0.0
@@ -123,20 +127,32 @@ for epoch in range(epochs):
         train_correct += (predicted == targets.squeeze()).sum().item()
 
         uncompressed_grads = [p.grad.data for p in train_model.parameters()]
-        for p, compressed_grad in zip(eval_model_1.parameters(), uncompressed_grads):
-            # p.data.add_(-self.lr * compressed_grad)
-            p.data -= lr * compressed_grad
+        if uncompressed_grads_accumulate is None:
+            uncompressed_grads_accumulate = copy.deepcopy(uncompressed_grads)
+        else:
+            for grads_accumulate, uncompressed_grad in zip(uncompressed_grads_accumulate,uncompressed_grads):
+                grads_accumulate += uncompressed_grad
 
         compressed_grads = dgc(uncompressed_grads)
-
-        for p, compressed_grad in zip(eval_model_2.parameters(), compressed_grads):
-            # p.data.add_(-self.lr * compressed_grad)
-            p.data -= lr * compressed_grad
+        if compressed_grads_accumulate is None:
+            compressed_grads_accumulate = copy.deepcopy(compressed_grads)
+        else:
+            for grads_accumulate, compressed_grad in zip(compressed_grads_accumulate, compressed_grads):
+                grads_accumulate += compressed_grad
 
 
     logger.info(
         f'Training Epoch: {epoch}, Acc: {round(100.0 * train_correct / train_total, 2)}, Loss: {round(train_loss / train_total, 4)}'
     )
+
+for p, compressed_grad in zip(eval_model_1.parameters(), uncompressed_grads_accumulate):
+    # p.data.add_(-self.lr * compressed_grad)
+    p.data -= lr * compressed_grad
+
+
+for p, compressed_grad in zip(eval_model_2.parameters(), compressed_grads_accumulate):
+    # p.data.add_(-self.lr * compressed_grad)
+    p.data -= lr * compressed_grad
 
 
 # print('==============================================')
