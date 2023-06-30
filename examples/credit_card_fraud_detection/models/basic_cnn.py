@@ -2,7 +2,7 @@ from torch import nn
 
 
 class CreditFraudNetMLP(nn.Module):
-    def __init__(self, num_features, num_classes):
+    def __init__(self, num_features, num_classes=1):
         super(CreditFraudNetMLP, self).__init__()
         self.fc1 = nn.Sequential(
             nn.Linear(num_features, 64),
