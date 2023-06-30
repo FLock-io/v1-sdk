@@ -4,14 +4,18 @@ from torch.optim import SGD
 
 class DGC_SGD(SGD):
     def __init__(self, params, lr, momentum=0, dampening=0,
-                 weight_decay=0, nesterov=False, sparsity=0.01, gradient_clip=0.01):
+                 weight_decay=0, nesterov=False, sparsity=0.01, gradient_clip=0.01,
+                 store_compressed_grad=False):
         super().__init__(params, lr, momentum, dampening, weight_decay, nesterov)
         self.sparsity = sparsity
         self.gradient_clip = gradient_clip
+        self.store_compressed_grad = store_compressed_grad
+        self.compressed_grads = []
 
     @torch.no_grad()
     def step(self, closure=None):
         """Performs a single optimization step."""
+        self.compressed_grads = []
         for group in self.param_groups:
             weight_decay = group['weight_decay']
             momentum = group['momentum']
@@ -28,6 +32,7 @@ class DGC_SGD(SGD):
                 grad_abs = d_p.data.abs()
                 mask = grad_abs.gt(self.sparsity * grad_abs.max())
                 d_p.data.mul_(mask)
+                self.compressed_grads.append(d_p.clone())
 
                 # Momentum Correction
                 if p in self.state and 'momentum_buffer' in self.state[p]:
