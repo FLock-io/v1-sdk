@@ -1,1 +1,1 @@
-from .dgc import DGC_SGD
+from .dgc import DGC_SGD, dgc_func

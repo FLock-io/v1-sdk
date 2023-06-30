@@ -2,7 +2,7 @@ import torch
 from torch.optim import SGD
 
 
-def dgc_func(grads, sparsity: float = 0.9):
+def dgc_func(grads, sparsity: float = 0.95):
     """
     This function implements the Deep Gradient Compression (DGC) for a given set of gradients.
     Args:
