@@ -63,7 +63,8 @@ class DGC_SGD(SGD):
                 grad_abs = d_p.data.abs()
                 mask = grad_abs.gt(self.sparsity * grad_abs.max())
                 d_p.data.mul_(mask)
-                self.compressed_grads.append(d_p.clone())
+                if self.store_compressed_grad:
+                    self.compressed_grads.append(d_p.clone())
 
                 # Momentum Correction
                 if p in self.state and 'momentum_buffer' in self.state[p]:
