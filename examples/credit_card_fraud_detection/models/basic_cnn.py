@@ -9,13 +9,11 @@ class CreditFraudNetMLP(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.2)
         )
-
         self.fc2 = nn.Sequential(
             nn.Linear(64, 128),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
-
         self.fc3 = nn.Sequential(
             nn.Linear(128, num_classes),
             nn.Sigmoid()
