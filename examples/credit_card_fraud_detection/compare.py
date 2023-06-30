@@ -61,7 +61,7 @@ def get_model():
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
-    return CreditFraudNetMLP(num_features=features, num_classes=1)
+    return CreditFraudNetMLP(num_features=features)
 
 
 batch_size = 128
@@ -108,20 +108,17 @@ for epoch in range(epochs):
     train_correct = 0
     train_total = 0
     for batch_idx, (inputs, targets) in enumerate(data_loader):
-
         # remove Time parameter
         inputs, targets = inputs.to(device)[:, 1:], targets.to(device)
         outputs = train_model(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
-        # self.fabric.backward(loss)
+        uncompressed_grads = [p.grad.clone() for p in train_model.parameters()]
         optimizer.step()
         train_loss += loss.item() * inputs.size(0)
         predicted = torch.round(outputs).squeeze()
         train_total += targets.size(0)
         train_correct += (predicted == targets.squeeze()).sum().item()
-
-        uncompressed_grads = [p.grad.data for p in train_model.parameters()]
         if uncompressed_grads_accumulate is None:
             uncompressed_grads_accumulate = copy.deepcopy(uncompressed_grads)
         else:
