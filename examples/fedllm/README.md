@@ -1,6 +1,8 @@
 ## Overview
 Prepared dataset and model weights could be found via https://drive.google.com/file/d/1ehdGXhKGlIOf8c8hit8QjM1JebCmWrai/view?usp=sharing
 
+Pls directly unzip the file to the root directory of this project.
+
 ## Installation 
 
 The code requires some dependencies (Python=3.8)  as specified in `requirements.txt`. Please follow the relevant libraries to install or run:
