@@ -9,7 +9,6 @@ import random
 
 flock = FlockSDK()
 
-
 import os
 from typing import List
 
@@ -37,9 +36,7 @@ class FlockModel:
             data_path: str = './data',
             output_dir: str = './lora-shepherd/',
             # FL hyperparamas
-            client_selection_frac: float = 0.1,
             num_communication_rounds: int = 50,
-            num_clients: int = 10,
             # Local training hyperparams
             local_batch_size: int = 64,  # 64,
             local_micro_batch_size: int = 8,
@@ -83,8 +80,6 @@ class FlockModel:
         self.output_dir = output_dir
         self.client_selection_frac = client_selection_frac
         self.num_communication_rounds = num_communication_rounds
-        self.num_clients = num_clients
-        self.num_clients_per_round = int(num_clients * client_selection_frac) if int(num_clients * client_selection_frac) > 0 else 1
         self.local_batch_size = local_batch_size
         self.local_micro_batch_size = local_micro_batch_size
         self.local_num_epochs = local_num_epochs
@@ -108,7 +103,6 @@ class FlockModel:
             f"output_dir: {output_dir}\n"
             f"client_selection_frac: {client_selection_frac}\n"
             f"num_communication_rounds: {num_communication_rounds}\n"
-            f"num_clients: {num_clients}\n"
             f"local_batch_size: {local_batch_size}\n"
             f"local_micro_batch_size: {local_micro_batch_size}\n"
             f"local_num_epochs: {local_num_epochs}\n"
@@ -131,13 +125,6 @@ class FlockModel:
         """
         self.gradient_accumulation_steps = local_batch_size // local_micro_batch_size
         self.prompter = Prompter(prompt_template_name)
-        self.device_map = "auto"
-        world_size = int(os.environ.get("WORLD_SIZE", 1))
-        self.ddp = world_size != 1
-        if self.ddp:
-            self.device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
-            self.gradient_accumulation_steps = self.gradient_accumulation_steps // world_size
-
         self.tokenizer = LlamaTokenizer.from_pretrained(global_model)
         self.tokenizer.pad_token_id = (
             0
@@ -156,6 +143,12 @@ class FlockModel:
         """
             Device setting
         """
+        self.device_map = "auto"
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
+        self.ddp = world_size != 1
+        if self.ddp:
+            self.device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
+            self.gradient_accumulation_steps = self.gradient_accumulation_steps // world_size
         # if torch.cuda.is_available():
         #     device = "cuda"
         # else:
@@ -356,9 +349,7 @@ if __name__ == "__main__":
     data_path = './data'
     output_dir = './vicuna-lora-shepherd-7b/'
     # FL hyperparamas
-    client_selection_frac = 0.1
     num_communication_rounds = 50
-    num_clients = 10
     # Local training hyperparams
     local_batch_size = 64  # 64,
     local_micro_batch_size = 8
@@ -388,9 +379,7 @@ if __name__ == "__main__":
         data_path=data_path,
         output_dir=output_dir,
         # FL hyperparamas
-        client_selection_frac=client_selection_frac,
         num_communication_rounds=num_communication_rounds,
-        num_clients=num_clients,
         # Local training hyperparams
         local_batch_size=local_batch_size,
         local_micro_batch_size=local_micro_batch_size,
