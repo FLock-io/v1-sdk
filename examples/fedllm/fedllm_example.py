@@ -155,6 +155,11 @@ class FlockModel:
         #     device = "cpu"
         # self.device = torch.device(device)
 
+        """
+            Dataset loading
+        """
+        self.local_train_dataset, self.local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt,
+                                                                    local_val_set_size)
 
     def load_dataset(self, generate_and_tokenize_prompt, local_val_set_size):
 
@@ -249,14 +254,14 @@ class FlockModel:
 
         logger.info("\nPreparing the local dataset and trainer")
 
-        local_train_dataset, local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt, local_val_set_size)
+
 
         model = self.get_starting_model()
         if parameters is not None:
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         model.train()
-        client = GeneralClient(self.client_id, model, local_train_dataset, local_eval_dataset, self.local_val_set_size, self.output_dir)
+        client = GeneralClient(self.client_id, model, self.local_train_dataset, None, self.local_val_set_size, self.output_dir)
 
         client.build_local_trainer(self.tokenizer,
                                    self.local_micro_batch_size,
@@ -288,7 +293,6 @@ class FlockModel:
     """
 
     def evaluate(self, parameters: bytes | None) -> float:
-        local_train_dataset, local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt, local_val_set_size)
 
         model = self.get_starting_model()
         if parameters is not None:
