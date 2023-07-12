@@ -12,7 +12,8 @@ flock = FlockSDK()
 import os
 from typing import List
 
-from transformers import LlamaTokenizer, LlamaForCausalLM
+import transformers
+from transformers import LlamaTokenizer, LlamaForCausalLM, TrainingArguments
 from peft import (
     LoraConfig,
     get_peft_model,
@@ -25,6 +26,7 @@ import datasets
 from datasets import load_dataset
 
 from federatedgpt_shepherd.utils.prompter import Prompter
+
 
 datasets.utils.logging.set_verbosity_error()
 
@@ -78,7 +80,6 @@ class FlockModel:
         self.global_model = global_model
         self.data_path = data_path
         self.output_dir = output_dir
-        self.client_selection_frac = client_selection_frac
         self.num_communication_rounds = num_communication_rounds
         self.local_batch_size = local_batch_size
         self.local_micro_batch_size = local_micro_batch_size
@@ -101,7 +102,6 @@ class FlockModel:
             f"global_model: {global_model}\n"
             f"data_path: {data_path}\n"
             f"output_dir: {output_dir}\n"
-            f"client_selection_frac: {client_selection_frac}\n"
             f"num_communication_rounds: {num_communication_rounds}\n"
             f"local_batch_size: {local_batch_size}\n"
             f"local_micro_batch_size: {local_micro_batch_size}\n"
@@ -298,16 +298,37 @@ class FlockModel:
         if parameters is not None:
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
-        # TODO - implement evaluation
-        accuracy = 0.0
-        test_loss = 0.0
-        test_total = 0.0
+        tokenizer = LlamaTokenizer.from_pretrained(self.global_model)
+        tokenizer.pad_token_id = (
+            0
+        )
+        tokenizer.padding_side = "left"
 
-        logger.info(
-            f"Tobe implemented model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
+        training_args = TrainingArguments(
+            output_dir=self.output_dir,
+            per_device_eval_batch_size=self.local_micro_batch_size,
         )
 
-        return accuracy
+        trainer = transformers.Trainer(
+            model=self.model,
+            args=training_args,
+            eval_dataset=self.local_eval_dataset,
+            data_collator=transformers.DataCollatorForSeq2Seq(
+                tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
+            ),
+        )
+
+        eval_result = trainer.evaluate()
+
+        logger.info(
+            f"Tobe implemented model test, Loss: {round(eval_result['eval_loss'], 4)}"
+        )
+
+        # logger.info(
+        #     f"Tobe implemented model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
+        # )
+
+        return eval_result['eval_loss']
 
     """
     aggregate() should take in a list of model weights (bytes),
@@ -359,7 +380,7 @@ if __name__ == "__main__":
     local_micro_batch_size = 8
     local_num_epochs = 10
     local_learning_rate = 3e-4
-    local_val_set_size = 0
+    local_val_set_size = 5
     local_save_steps = 3
     cutoff_len = 1024
     # LoRA hyperparams
