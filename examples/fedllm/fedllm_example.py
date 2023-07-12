@@ -310,7 +310,7 @@ class FlockModel:
         )
 
         trainer = transformers.Trainer(
-            model=self.model,
+            model=model,
             args=training_args,
             eval_dataset=self.local_eval_dataset,
             data_collator=transformers.DataCollatorForSeq2Seq(
