@@ -328,7 +328,8 @@ class FlockModel:
         #     f"Tobe implemented model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
         # )
 
-        return eval_result['eval_loss']
+        # Using miners for temp
+        return -eval_result['eval_loss']
 
     """
     aggregate() should take in a list of model weights (bytes),
@@ -367,6 +368,7 @@ if __name__ == "__main__":
 
     client_id = 1
 
+
     """
     Hyper parameters
     """
@@ -376,13 +378,13 @@ if __name__ == "__main__":
     # FL hyperparamas
     num_communication_rounds = 50
     # Local training hyperparams
-    local_batch_size = 64  # 64,
+    local_batch_size = 32  # 64,
     local_micro_batch_size = 8
     local_num_epochs = 10
     local_learning_rate = 3e-4
     local_val_set_size = 5
     local_save_steps = 3
-    cutoff_len = 1024
+    cutoff_len = 256
     # LoRA hyperparams
     lora_r = 16
     lora_alpha = 16
