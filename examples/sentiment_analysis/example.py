@@ -42,7 +42,7 @@ class FlockModel:
             device = "cpu"
         self.device = torch.device(device)
 
-    def process_dataset(self, dataset: list[dict]):
+    def process_dataset(self, dataset: list[list]):
         dataset_df = IndexesDataset(dataset, max_samples_count=10000, device=device)
         logger.debug("Processing dataset")
         return get_loader(
@@ -66,7 +66,7 @@ class FlockModel:
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
+    def train(self, parameters: bytes | None, dataset: list[list]) -> bytes:
         data_loader = self.process_dataset(dataset)
 
         model = self.get_starting_model()
@@ -121,7 +121,7 @@ class FlockModel:
     5. Output the accuracy of the model parameters on the dataset as a float
     """
 
-    def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
+    def evaluate(self, parameters: bytes | None, dataset: list[list]) -> float:
         data_loader = self.process_dataset(dataset)
         criterion = torch.nn.BCELoss()
 
