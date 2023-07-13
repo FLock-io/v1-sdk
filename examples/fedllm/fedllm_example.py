@@ -372,9 +372,9 @@ if __name__ == "__main__":
     """
     Hyper parameters
     """
-    global_model = './model/vicuna-7b-all-v1.1'
-    data_path = './data'
-    output_dir = './vicuna-lora-shepherd-7b/'
+    global_model = 'model/vicuna-7b-all-v1.1'
+    data_path = 'data/4'
+    output_dir = 'vicuna-lora-shepherd-7b/'
     # FL hyperparamas
     num_communication_rounds = 50
     # Local training hyperparams
