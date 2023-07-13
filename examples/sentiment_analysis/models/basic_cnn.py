@@ -4,7 +4,7 @@ import torch.nn.functional as F
 class LinearClassifier(nn.Module):
     def __init__(self, vocab_size, emb_size):
         super().__init__()
-        self.embedding = nn.Embedding(vocab_size, emb_size, max_norm=True)
+        self.embedding = nn.Embedding(vocab_size, emb_size)
         self.linear = nn.Linear(emb_size, 1)
 
     def forward(self, x):
@@ -14,9 +14,9 @@ class LinearClassifier(nn.Module):
         return logits
 
 class CNNClassifier(nn.Module):
-    def __init__(self, vocab_size, emb_size, seq_len):
+    def __init__(self, vocab_size, emb_size):
         super().__init__()
-        self.embedding = nn.Embedding(vocab_size, emb_size, max_norm=True)
+        self.embedding = nn.Embedding(vocab_size, emb_size)
         self.conv1 = nn.Conv1d(emb_size, 100, 5, padding=2)
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv1d(100, 100, 5, padding=2)
