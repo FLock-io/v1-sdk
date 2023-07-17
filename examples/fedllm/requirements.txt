@@ -11,3 +11,9 @@ git+https://github.com/huggingface/transformers.git
 sentencepiece
 gradio
 sentencepiece
+loguru
+flask
+pandas
+scikit-learn
+tqdm
+numpy
