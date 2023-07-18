@@ -26,11 +26,7 @@ RUN make altinstall
 WORKDIR /
 RUN rm -r /tmp/Python-3.11.3
 
-# ================ Install Python from source code =================
-
-# 设置Python 3.11为默认版本
-#RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
-#RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3.11 1
+# ================ Install Python from source code ================
 
 RUN apt-get install -y git
 
