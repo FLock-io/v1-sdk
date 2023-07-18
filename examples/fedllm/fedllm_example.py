@@ -252,9 +252,19 @@ class FlockModel:
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
         self.local_comm_round_idx += 1
 
+        import torch
+
+        # 判断是否有GPU可用
+        if torch.cuda.is_available():
+            logger.info("GPU is available.")
+        else:
+            logger.info("GPU is not available.")
+
+        # 查看可用GPU的数量
+        logger.info("Number of GPUs available:", torch.cuda.device_count())
+
+
         logger.info("\nPreparing the local dataset and trainer")
-
-
 
         model = self.get_starting_model()
         if parameters is not None:
@@ -293,7 +303,6 @@ class FlockModel:
     """
 
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
-
         model = self.get_starting_model()
         if parameters is not None:
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
@@ -378,13 +387,13 @@ if __name__ == "__main__":
     # FL hyperparamas
     num_communication_rounds = 50
     # Local training hyperparams
-    local_batch_size = 32  # 64,
+    local_batch_size = 8  # 64,
     local_micro_batch_size = 8
     local_num_epochs = 10
     local_learning_rate = 3e-4
     local_val_set_size = 5
     local_save_steps = 3
-    cutoff_len = 256
+    cutoff_len = 32
     # LoRA hyperparams
     lora_r = 16
     lora_alpha = 16
