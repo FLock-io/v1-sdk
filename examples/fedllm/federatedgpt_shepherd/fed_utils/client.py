@@ -24,9 +24,9 @@ class GeneralClient:
         self.model = model
         self.output_dir = output_dir
         self.local_output_dir = os.path.join(self.output_dir, "trainer_saved", "local_output")
-        self.local_train_dataset= local_train_dataset,
-        self.local_eval_dataset= local_eval_dataset,
-        self.local_val_set_size=local_val_set_size,
+        self.local_train_dataset= local_train_dataset
+        self.local_eval_dataset= local_eval_dataset
+        self.local_val_set_size=local_val_set_size
 
         self.model_eval_steps = model_eval_steps
         self.model_save_steps = model_save_steps
@@ -39,6 +39,7 @@ class GeneralClient:
                             local_learning_rate,
                             group_by_length,
                             ddp):
+
         self.train_args = transformers.TrainingArguments(
             per_device_train_batch_size=local_micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,

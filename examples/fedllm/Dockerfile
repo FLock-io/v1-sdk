@@ -1,5 +1,5 @@
 #FROM python:3.11.3
-FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
 # ================ Install Python from source code =================
 
@@ -28,7 +28,7 @@ RUN rm -r /tmp/Python-3.11.3
 
 # ================ Install Python from source code ================
 
-RUN apt-get install -y git
+RUN apt-get install -y git libbz2-dev
 
 RUN python3.11 -m pip install --upgrade pip
 

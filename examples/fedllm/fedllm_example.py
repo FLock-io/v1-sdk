@@ -271,15 +271,16 @@ class FlockModel:
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         model.train()
-        client = GeneralClient(self.client_id, model, self.local_train_dataset, None, self.local_val_set_size, self.output_dir)
 
-        client.build_local_trainer(self.tokenizer,
-                                   self.local_micro_batch_size,
-                                   self.gradient_accumulation_steps,
-                                   self.local_num_epochs,
-                                   self.local_learning_rate,
-                                   self.group_by_length,
-                                   self.ddp)
+        client = GeneralClient(client_id=self.client_id, model=model, local_train_dataset=self.local_train_dataset, local_eval_dataset=None, local_val_set_size=self.local_val_set_size, output_dir=self.output_dir)
+
+        client.build_local_trainer(tokenizer=self.tokenizer,
+                                   local_micro_batch_size=self.local_micro_batch_size,
+                                   gradient_accumulation_steps=self.gradient_accumulation_steps,
+                                   local_num_epochs=self.local_num_epochs,
+                                   local_learning_rate=self.local_learning_rate,
+                                   group_by_length=self.group_by_length,
+                                   ddp=self.ddp)
 
         logger.info("Initiating the local training")
         client.initiate_local_training()
@@ -391,7 +392,7 @@ if __name__ == "__main__":
     local_micro_batch_size = 8
     local_num_epochs = 10
     local_learning_rate = 3e-4
-    local_val_set_size = 5
+    local_val_set_size = 0
     local_save_steps = 3
     cutoff_len = 32
     # LoRA hyperparams
