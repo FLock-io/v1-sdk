@@ -45,6 +45,7 @@ class FlockModel:
             local_num_epochs: int = 10,
             local_learning_rate: float = 3e-4,
             local_val_set_size: int = 0,
+            voter_val_set_size: int = 0,
             local_save_steps: int = 3,
             cutoff_len: int = 512,
             # LoRA hyperparams
@@ -86,6 +87,7 @@ class FlockModel:
         self.local_num_epochs = local_num_epochs
         self.local_learning_rate = local_learning_rate
         self.local_val_set_size = local_val_set_size
+        self.voter_val_set_size = voter_val_set_size
         self.local_save_steps = local_save_steps
         self.cutoff_len = cutoff_len
         self.lora_r = lora_r
@@ -159,16 +161,16 @@ class FlockModel:
             Dataset loading
         """
         self.local_train_dataset, self.local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt,
-                                                                    local_val_set_size)
+                                                                    voter_val_set_size)
 
-    def load_dataset(self, generate_and_tokenize_prompt, local_val_set_size):
+    def load_dataset(self, generate_and_tokenize_prompt, voter_val_set_size):
 
         self.local_data_path = os.path.join(data_path, "local_training_{}.json".format(self.client_id))
         self.local_data = load_dataset("json", data_files=self.local_data_path)
 
-        if local_val_set_size > 0:
+        if voter_val_set_size > 0:
             local_train_val = self.local_data["train"].train_test_split(
-                test_size=local_val_set_size, shuffle=True, seed=42
+                test_size=voter_val_set_size, shuffle=True, seed=42
             )
             self.local_train_dataset = (
                 local_train_val["train"].shuffle().map(generate_and_tokenize_prompt)
@@ -179,7 +181,7 @@ class FlockModel:
         else:
             self.local_train_dataset = self.local_data["train"].shuffle().map(generate_and_tokenize_prompt)
             self.local_eval_dataset = None
-        self.local_val_set_size = local_val_set_size
+        self.voter_val_set_size = voter_val_set_size
 
         return self.local_train_dataset, self.local_eval_dataset
 
@@ -357,9 +359,13 @@ class FlockModel:
                 temp_w.append(local_w[k])
             averaged_params_template[k] = sum(temp_w) / len(temp_w)
 
+        # check dir
+        target_path = os.path.join(self.output_dir, str(self.local_comm_round_idx))
+        mkdir(target_path)
+
         # Save the averaged parameters to the file
         torch.save(averaged_params_template,
-                   os.path.join(self.output_dir, str(self.local_comm_round_idx), "adapter_model.bin"))
+                   os.path.join(target_path, "adapter_model.bin"))
         self.lora_config.save_pretrained(self.output_dir)
 
         # Create a buffer
@@ -373,11 +379,17 @@ class FlockModel:
 
         return aggregated_parameters
 
+import os
+
+def mkdir(path):
+    if not os.path.isdir(path):
+        # logger.info(path)
+        # os.mkdir(path)
+        os.makedirs(path)
 
 if __name__ == "__main__":
 
     client_id = 1
-
 
     """
     Hyper parameters
@@ -390,9 +402,10 @@ if __name__ == "__main__":
     # Local training hyperparams
     local_batch_size = 8  # 64,
     local_micro_batch_size = 8
-    local_num_epochs = 10
+    local_num_epochs = 1
     local_learning_rate = 3e-4
     local_val_set_size = 0
+    voter_val_set_size = 5
     local_save_steps = 3
     cutoff_len = 32
     # LoRA hyperparams
@@ -423,6 +436,7 @@ if __name__ == "__main__":
         local_num_epochs=local_num_epochs,
         local_learning_rate=local_learning_rate,
         local_val_set_size=local_val_set_size,
+        voter_val_set_size=voter_val_set_size,
         local_save_steps=local_save_steps,
         cutoff_len=cutoff_len,
         # LoRA hyperparams
