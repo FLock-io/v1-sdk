@@ -13,7 +13,10 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libreadline-dev \
     libffi-dev \
-    wget
+    wget \
+    libbz2-dev \
+    liblzma-dev \
+    git
 
 # Install and compile specific version (Python 3.11.3)
 WORKDIR /tmp
