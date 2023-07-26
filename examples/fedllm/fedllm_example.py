@@ -270,6 +270,7 @@ class FlockModel:
 
         model = self.get_starting_model()
         if parameters is not None:
+            logger.debug("Loading latest parameters to local model")
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         model.train()
@@ -308,6 +309,7 @@ class FlockModel:
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
         model = self.get_starting_model()
         if parameters is not None:
+            logger.debug("Loading latest parameters to local model")
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         tokenizer = LlamaTokenizer.from_pretrained(self.global_model)

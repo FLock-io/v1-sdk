@@ -72,13 +72,16 @@ class FlockSDK:
 
     def run(self):
 
-        import argparse
-
-        parser = argparse.ArgumentParser(description='example')
-
-        parser.add_argument('-p', '--port', type=str, help='http port')
-
-        args = parser.parse_args()
+        # import argparse
+        #
+        # parser = argparse.ArgumentParser(description='example')
+        #
+        # parser.add_argument('-p', '--port', type=str, help='http port')
+        #
+        # args = parser.parse_args()
+        #
+        # self._check_registered_methods()
+        # self.flask.run(host="0.0.0.0", port=args.port,debug=self.debug)
 
         self._check_registered_methods()
-        self.flask.run(host="0.0.0.0", port=args.port,debug=self.debug)
+        self.flask.run(host="0.0.0.0", debug=self.debug)
