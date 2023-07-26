@@ -402,14 +402,14 @@ if __name__ == "__main__":
     # FL hyperparamas
     num_communication_rounds = 50
     # Local training hyperparams
-    local_batch_size = 64  # 64,
+    local_batch_size = 32  # 64,
     local_micro_batch_size = 8
     local_num_epochs = 20
     local_learning_rate = 3e-4
     local_val_set_size = 0
     voter_val_set_size = 5
     local_save_steps = 3
-    cutoff_len = 1024
+    cutoff_len = 512
     # LoRA hyperparams
     lora_r = 16
     lora_alpha = 16
