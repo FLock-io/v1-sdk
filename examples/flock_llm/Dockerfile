@@ -16,8 +16,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     libbz2-dev \
     liblzma-dev \
-    git \
-    wandb
+    git
 
 # Install and compile specific version (Python 3.11.3)
 WORKDIR /tmp
@@ -32,8 +31,6 @@ WORKDIR /
 RUN rm -r /tmp/Python-3.11.3
 
 # ================ Install Python from source code ================
-
-RUN apt-get install -y git libbz2-dev
 
 RUN python3.11 -m pip install --upgrade pip
 
