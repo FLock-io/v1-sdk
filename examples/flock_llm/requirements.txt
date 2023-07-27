@@ -16,3 +16,6 @@ pandas
 scikit-learn
 tqdm
 numpy
+wandb
+google-api-python-client
+scipy

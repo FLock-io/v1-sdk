@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     libbz2-dev \
     liblzma-dev \
-    git
+    git \
+    wandb
 
 # Install and compile specific version (Python 3.11.3)
 WORKDIR /tmp
