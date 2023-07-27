@@ -35,6 +35,28 @@ class CreditFraudNetMLP(nn.Module):
 
 
 class ExampleTorchModel(FlockModel):
+    def __init__(
+        self,
+        features,
+        epochs=1,
+        lr=0.03,
+    ):
+        """
+        Hyper parameters
+        """
+        self.epochs = epochs
+        self.features = features
+        self.lr = lr
+
+        """
+            Device setting
+        """
+        if torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
+        self.device = torch.device(device)
+
     def init_dataset(self, dataset_path: str) -> None:
         self.dataset_path = dataset_path
         with open(dataset_path, "r") as f:
@@ -150,6 +172,13 @@ class ExampleTorchModel(FlockModel):
 
 
 if __name__ == "__main__":
-    model = ExampleTorchModel()
+    epochs = 1
+    lr = 0.000001
+    features = 30
+    model = ExampleTorchModel(
+        features,
+        epochs=epochs,
+        lr=lr
+    )
     sdk = FlockSDK(model)
     sdk.run()
