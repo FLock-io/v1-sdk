@@ -15,7 +15,7 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/FLock-io/v1-sdk/"
-"Bug Tracker" = "https://github.com/FLock-io/v1-sdk//issues"
+"Bug Tracker" = "https://github.com/FLock-io/v1-sdk/issues"
 
 [build-system]
 requires = ["setuptools"]

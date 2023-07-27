@@ -6,70 +6,52 @@ from loguru import logger
 
 from functools import wraps
 
+# from .flock_model import FlockModel
+
 
 class FlockSDK:
-    def __init__(self, debug: bool = True):
+    def __init__(self, model, debug: bool = True):
         self.flask = Flask(__name__)
-        self.methods = {}
+        self.model = model
         self.debug = debug
-
-    def _register_view(self, name, func):
-        self.methods[name] = func
         self.flask.add_url_rule(
-            f"/{name}",
-            endpoint=name,
-            view_func=func,
+            "/call",
+            endpoint="call",
+            view_func=self.call,
             methods=["POST", "OPTIONS"],
         )
+        self.model.init_dataset("/dataset.json")
 
-    def register_evaluate(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            data = request.get_json(force=True)
-            parameters = data["parameters"]
-            if parameters:
-                parameters = base64.b64decode(data["parameters"])
+    def call(self, *args, **kwargs):
+        data = request.get_json(force=True)
+        method = data.pop("method")
+        if method not in ["train", "evaluate", "aggregate"]:
+            raise RuntimeError("Attempted to call invalid SDK method!")
+        func = getattr(self.model, method)
 
-            dataset = data["dataset"]
-            accuracy = func(parameters, dataset)
-            return jsonify({"accuracy": accuracy})
+        parameters = data.pop("parameters", None)
+        if parameters:
+            parameters = base64.b64decode(parameters)
 
-        self._register_view("evaluate", wrapper)
-        return wrapper
+        parameters_list = data.pop("parameters_list", None)
+        if parameters_list:
+            parameters_list = [
+                base64.b64decode(parameters) for parameters in parameters_list
+            ]
 
-    def register_train(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            data = request.get_json(force=True)
-            parameters = data["parameters"]
-            if parameters:
-                parameters = base64.b64decode(data["parameters"])
-
-            dataset = data["dataset"]
-            trained_parameters = func(parameters, dataset)
+        if method == "train":
+            trained_parameters = func(parameters)
             b64_parameters = base64.b64encode(trained_parameters)
             return jsonify({"parameters": b64_parameters.decode("ascii")})
-
-        self._register_view("train", wrapper)
-        return wrapper
-
-    def register_aggregate(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            data = request.get_json(force=True)
-            parameters_list = [
-                base64.b64decode(parameters) for parameters in data["parameters_list"]
-            ]
+        elif method == "evaluate":
+            accuracy = func(parameters)
+            return jsonify({"accuracy": accuracy})
+        elif method == "aggregate":
             aggregated_parameters = func(parameters_list)
             b64_parameters = base64.b64encode(aggregated_parameters)
             return jsonify({"parameters": b64_parameters.decode("ascii")})
-
-        self._register_view("aggregate", wrapper)
-        return func
-
-    def _check_registered_methods(self):
-        assert set(self.methods.keys()) == set(["aggregate", "evaluate", "train"])
+        else:
+            raise ValueError("Incorrect arguments passed to SDK function")
 
     def run(self):
-        self._check_registered_methods()
         self.flask.run(host="0.0.0.0", debug=self.debug)
