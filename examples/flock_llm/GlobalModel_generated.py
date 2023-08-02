@@ -211,8 +211,8 @@ def main(
                 label="Output",
             )
         ],
-        title="FederatedGPT-shepherd",
-        description="Shepherd is a LLM that has been fine-tuned in a federated manner ",
+        title="FLockLLM",
+        description="FLockLLM is a LLM that has been fine-tuned in a federated manner ",
     ).queue()
 
     sherpherd_UI.launch(share=True)
