@@ -102,6 +102,11 @@ python GlobalModel_generated.py \
       --base_model './models/vicuna-7b-all-v1.1' \
       --lora_weights_path vicuna-lora-shepherd-7b/10/4/adapter_model.bin \
       --lora_config_path vicuna-lora-shepherd-7b/10/
+      
+# May differents from the above
+python GlobalModel_generated.py       --load_8bit       --base_model 'model/vicuna-7b-all-v1.1/'       --lora_weights_path vicuna-lora-shepherd-7b/3/adapter_model.bin       --lora_config_path vicuna-lora-shepherd-7b
+
+python GlobalModel_generated.py       --load_8bit       --base_model 'model/vicuna-7b-all-v1.1/'       --lora_weights_path vicuna-lora-shepherd-7b/3/local_output_1/pytorch_model.bin       --lora_config_path vicuna-lora-shepherd-7b
 ```
 
 Note:
