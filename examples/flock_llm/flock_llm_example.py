@@ -352,9 +352,11 @@ class FlockModel:
 
     def aggregate(self, parameters_list: list[bytes]) -> bytes:
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
         parameters_list = [
-            torch.load(io.BytesIO(parameters)).to(device) for parameters in parameters_list
+            torch.load(io.BytesIO(parameters), map_location=device) for parameters in parameters_list
         ]
+
         averaged_params_template = parameters_list[0]
         for k in averaged_params_template.keys():
             temp_w = []
