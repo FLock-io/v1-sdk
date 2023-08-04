@@ -1,17 +1,17 @@
-import torch
+"""
+
+FLock LLM example code based on the FLock sdk
+
+"""
+
 import io
-from loguru import logger
-from flock_sdk.flock_sdk import FlockSDK
-
-from pandas import DataFrame
-import numpy as np
-import random
-
-flock = FlockSDK()
-
 import os
+import random
+import datasets
+from datasets import load_dataset
 from typing import List
 
+import torch
 import transformers
 from transformers import LlamaTokenizer, LlamaForCausalLM, TrainingArguments
 from peft import (
@@ -19,15 +19,16 @@ from peft import (
     get_peft_model,
     prepare_model_for_int8_training,
     set_peft_model_state_dict,
-    get_peft_model_state_dict,
 )
-from federatedgpt_shepherd.fed_utils import GeneralClient
-import datasets
-from datasets import load_dataset
+import numpy as np
+from loguru import logger
 
-from federatedgpt_shepherd.utils.prompter import Prompter
+from utils.helper import mkdir
+from flock_sdk import FlockSDK
+from fl_libs import GeneralClient
+from utils.prompter import Prompter
 
-
+flock = FlockSDK()
 datasets.utils.logging.set_verbosity_error()
 
 class FlockModel:
@@ -64,11 +65,13 @@ class FlockModel:
             client_id=1,
     ):
         self.client_id = client_id
+        # Communication round counter
         self.local_comm_round_idx = 0
 
         """
             Environment variables
         """
+        self.seed = seed
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -76,12 +79,14 @@ class FlockModel:
         torch.backends.cudnn.deterministic = True
 
         """
-        Hyper parameters
+            Hyper parameters
         """
         self.global_model = global_model
         self.data_path = data_path
         self.output_dir = output_dir
+        # Federated Learning Parameters
         self.num_communication_rounds = num_communication_rounds
+        # Local Training Parameters
         self.local_batch_size = local_batch_size
         self.local_micro_batch_size = local_micro_batch_size
         self.local_num_epochs = local_num_epochs
@@ -90,17 +95,19 @@ class FlockModel:
         self.voter_val_set_size = voter_val_set_size
         self.local_save_steps = local_save_steps
         self.cutoff_len = cutoff_len
+        # LoRA Parameters
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
         self.lora_dropout = lora_dropout
         self.lora_target_modules = lora_target_modules
+        # LLM Parameters
         self.train_on_inputs = train_on_inputs
         self.group_by_length = group_by_length
         self.resume_from_checkpoint = resume_from_checkpoint
         self.prompt_template_name = prompt_template_name
 
         logger.debug(
-            f"Federated Finetuning LLM-LoRA with params:\n"
+            f"FLockLLM finetuning using LoRA with params:\n"
             f"global_model: {global_model}\n"
             f"data_path: {data_path}\n"
             f"output_dir: {output_dir}\n"
@@ -143,7 +150,7 @@ class FlockModel:
         )
 
         """
-            Device setting
+            Device and DDP setting
         """
         self.device_map = "auto"
         world_size = int(os.environ.get("WORLD_SIZE", 1))
@@ -151,11 +158,6 @@ class FlockModel:
         if self.ddp:
             self.device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
             self.gradient_accumulation_steps = self.gradient_accumulation_steps // world_size
-        # if torch.cuda.is_available():
-        #     device = "cuda"
-        # else:
-        #     device = "cpu"
-        # self.device = torch.device(device)
 
         """
             Dataset loading
@@ -164,13 +166,14 @@ class FlockModel:
                                                                     voter_val_set_size)
 
     def load_dataset(self, generate_and_tokenize_prompt, voter_val_set_size):
+        logger.info("\nPreparing the local training and validation dataset")
 
         self.local_data_path = os.path.join(data_path, "local_training_{}.json".format(self.client_id))
         self.local_data = load_dataset("json", data_files=self.local_data_path)
 
         if voter_val_set_size > 0:
             local_train_val = self.local_data["train"].train_test_split(
-                test_size=voter_val_set_size, shuffle=True, seed=42
+                test_size=voter_val_set_size, shuffle=True, seed=self.seed
             )
             self.local_train_dataset = (
                 local_train_val["train"].shuffle().map(generate_and_tokenize_prompt)
@@ -189,13 +192,13 @@ class FlockModel:
         result = self.tokenizer(
             prompt,
             truncation=True,
-            max_length=cutoff_len,
+            max_length=self.cutoff_len,
             padding=False,
             return_tensors=None,
         )
         if (
                 result["input_ids"][-1] != self.tokenizer.eos_token_id
-                and len(result["input_ids"]) < cutoff_len
+                and len(result["input_ids"]) < self.cutoff_len
                 and add_eos_token
         ):
             result["input_ids"].append(self.tokenizer.eos_token_id)
@@ -223,10 +226,12 @@ class FlockModel:
                                                   -100
                                               ] * user_prompt_len + tokenized_full_prompt["labels"][
                                                                     user_prompt_len:
-                                                                    ]  # could be sped up, probably
+                                                                    ]
         return tokenized_full_prompt
 
     def get_starting_model(self):
+
+        # Load pre-trained model (weights)
         model = LlamaForCausalLM.from_pretrained(
             self.global_model,
             load_in_8bit=True,
@@ -236,6 +241,7 @@ class FlockModel:
 
         model = prepare_model_for_int8_training(model)
 
+        # Inject LORA into pre-trained model
         model = get_peft_model(model, self.lora_config)
         if not self.ddp and torch.cuda.device_count() > 1:
             model.is_parallelizable = True
@@ -254,29 +260,14 @@ class FlockModel:
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
         self.local_comm_round_idx += 1
 
-        import torch
-
-        # 判断是否有GPU可用
-        if torch.cuda.is_available():
-            logger.info("GPU is available.")
-        else:
-            logger.info("GPU is not available.")
-
-        # 查看可用GPU的数量
-        logger.info("Number of GPUs available:", torch.cuda.device_count())
-
-
-        logger.info("\nPreparing the local dataset and trainer")
-
+        # Load model template with pre-trained weights
         model = self.get_starting_model()
         if parameters is not None:
-            logger.debug("Loading latest parameters to local model")
+            logger.debug("Loading latest global adapter model parameters to local model...")
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         model.train()
-
         client = GeneralClient(client_id=self.client_id, model=model, local_train_dataset=self.local_train_dataset, local_eval_dataset=None, local_val_set_size=self.local_val_set_size, output_dir=self.output_dir)
-
         client.build_local_trainer(tokenizer=self.tokenizer,
                                    local_micro_batch_size=self.local_micro_batch_size,
                                    gradient_accumulation_steps=self.gradient_accumulation_steps,
@@ -285,15 +276,16 @@ class FlockModel:
                                    group_by_length=self.group_by_length,
                                    ddp=self.ddp)
 
-        logger.info("Initiating the local training")
+        logger.info("Initiating the local training...")
         client.initiate_local_training()
 
-        logger.info("Local training starts ... ")
+        logger.info("Local training starts...")
         client.train()
 
-        logger.info("\nTerminating the local training")
+        logger.info("\nTerminating the local training...")
         model = client.terminate_local_training(self.local_comm_round_idx)
 
+        logger.info("\nWrapping up the local model parameters and sending to voters...")
         buffer = io.BytesIO()
         torch.save(model.state_dict(), buffer)
         return buffer.getvalue()
@@ -309,7 +301,7 @@ class FlockModel:
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
         model = self.get_starting_model()
         if parameters is not None:
-            logger.debug("Loading latest parameters to local model")
+            logger.debug("Loading latest global adapter model parameters to local model...")
             set_peft_model_state_dict(model, torch.load(io.BytesIO(parameters)), "default")
 
         tokenizer = LlamaTokenizer.from_pretrained(self.global_model)
@@ -332,15 +324,15 @@ class FlockModel:
             ),
         )
 
+        logger.info(
+            f"Global adapter model evaluation start..."
+        )
+
         eval_result = trainer.evaluate()
 
         logger.info(
-            f"Tobe implemented model test, Loss: {round(eval_result['eval_loss'], 4)}"
+            f"Global adapter model loss: {round(eval_result['eval_loss'], 6)}"
         )
-
-        # logger.info(
-        #     f"Tobe implemented model test, Acc: {accuracy}, Loss: {round(test_loss / test_total, 4)}"
-        # )
 
         # Using miners for temp
         return -eval_result['eval_loss']
@@ -351,12 +343,14 @@ class FlockModel:
     """
 
     def aggregate(self, parameters_list: list[bytes]) -> bytes:
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+        # Handle DDP alignment problem: relocate the model weights to unified device
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         parameters_list = [
             torch.load(io.BytesIO(parameters), map_location=device) for parameters in parameters_list
         ]
 
+        logger.info("Aggregating the all local model parameters...")
         averaged_params_template = parameters_list[0]
         for k in averaged_params_template.keys():
             temp_w = []
@@ -364,33 +358,30 @@ class FlockModel:
                 temp_w.append(local_w[k])
             averaged_params_template[k] = sum(temp_w) / torch.tensor(len(temp_w)).to(device)
 
-        # check dir
+        # Check output dir
         target_path = os.path.join(self.output_dir, str(self.local_comm_round_idx))
         mkdir(target_path)
 
         # Save the averaged parameters to the file
+        global_model_output_path = os.path.join(target_path, "pytorch_local_model_lora.bin")
+        logger.info(f"Saving the global adapter model parameters to {global_model_output_path}...")
         torch.save(averaged_params_template,
-                   os.path.join(target_path, "adapter_model.bin"))
+                   global_model_output_path)
         self.lora_config.save_pretrained(self.output_dir)
 
+        logger.info("Wrapping up the global adapter model parameters and sending to all Proposers...")
         # Create a buffer
         buffer = io.BytesIO()
-
         # Save state dict to the buffer
         torch.save(averaged_params_template, buffer)
-
         # Get the byte representation
         aggregated_parameters = buffer.getvalue()
 
         return aggregated_parameters
 
-import os
 
-def mkdir(path):
-    if not os.path.isdir(path):
-        # logger.info(path)
-        # os.mkdir(path)
-        os.makedirs(path)
+
+
 
 if __name__ == "__main__":
 
@@ -403,16 +394,18 @@ if __name__ == "__main__":
     data_path = 'data/4'
     output_dir = 'vicuna-lora-shepherd-7b/'
     # FL hyperparamas
-    num_communication_rounds = 50
+    num_communication_rounds = 10
     # Local training hyperparams
     local_batch_size = 32  # 64,
+    # local_batch_size = 8  # 64,
     local_micro_batch_size = 8
-    local_num_epochs = 20
+    local_num_epochs = 1
     local_learning_rate = 3e-4
     local_val_set_size = 0
     voter_val_set_size = 5
     local_save_steps = 3
     cutoff_len = 512
+    # cutoff_len = 16
     # LoRA hyperparams
     lora_r = 16
     lora_alpha = 16

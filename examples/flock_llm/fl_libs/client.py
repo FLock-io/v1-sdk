@@ -1,13 +1,19 @@
-import transformers
+"""
+
+Federated Learning Client
+
+Reference:
+    1. Shepherd: A Lightweight GitHub Platform Supporting Federated Instruction Tuning
+        - https://github.com/JayZhang42/FederatedGPT-Shepherd
+        - Jianyi Zhang and Martin Kuo and Ruiyi Zhang and Guoyin Wang and Saeed Vahidian and Yiran Chen
+"""
+
 import os
-
-import copy
 from collections import OrderedDict
-import torch
-from peft import (
-    get_peft_model_state_dict,
-)
 
+import torch
+import transformers
+from peft import get_peft_model_state_dict
 
 class GeneralClient:
     def __init__(self,
@@ -23,7 +29,7 @@ class GeneralClient:
 
         self.model = model
         self.output_dir = output_dir
-        self.local_output_dir = os.path.join(self.output_dir, "trainer_saved", "local_output")
+        self.local_output_dir = os.path.join(self.output_dir, "local_trainer_saved", "local_output")
         self.local_train_dataset= local_train_dataset
         self.local_eval_dataset= local_eval_dataset
         self.local_val_set_size=local_val_set_size
@@ -87,6 +93,6 @@ class GeneralClient:
         new_adapter_weight = self.model.state_dict()
         single_output_dir = os.path.join(self.output_dir, str(local_comm_round_idx), "local_output_{}".format(self.client_id))
         os.makedirs(single_output_dir, exist_ok=True)
-        torch.save(new_adapter_weight, single_output_dir + "/pytorch_model.bin")
+        torch.save(new_adapter_weight, single_output_dir + "/pytorch_local_model_lora.bin")
 
         return self.model

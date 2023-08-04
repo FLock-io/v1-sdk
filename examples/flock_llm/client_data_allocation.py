@@ -1,10 +1,20 @@
+"""
+
+Client data allocation tool for federated learning.
+It will help you to partition allocate the data for each client.
+
+Reference:
+    1. Shepherd: A Lightweight GitHub Platform Supporting Federated Instruction Tuning
+        - https://github.com/JayZhang42/FederatedGPT-Shepherd
+        - Jianyi Zhang and Martin Kuo and Ruiyi Zhang and Guoyin Wang and Saeed Vahidian and Yiran Chen
+"""
 import sys
-import pandas as pd
-import numpy as np
 import random
 import os
 import json
-import pdb
+
+import pandas as pd
+import numpy as np
 
 num_clients = int(sys.argv[1])
 diff_quantity = int(sys.argv[2])

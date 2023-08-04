@@ -1,22 +1,30 @@
+"""
+
+Designed for output global model hosting.
+
+Reference:
+    1. Shepherd: A Lightweight GitHub Platform Supporting Federated Instruction Tuning
+        - https://github.com/JayZhang42/FederatedGPT-Shepherd
+        - Jianyi Zhang and Martin Kuo and Ruiyi Zhang and Guoyin Wang and Saeed Vahidian and Yiran Chen
+"""
+
 import os
 
 import fire
-import gradio as gr
 import torch
 import transformers
-
+from transformers import GenerationConfig, LlamaForCausalLM, LlamaTokenizer
+import gradio as gr
 from peft import (
     PeftModel,
     LoraConfig,
-    get_peft_model,
-    get_peft_model_state_dict,
     prepare_model_for_int8_training,
     set_peft_model_state_dict,
 )
+from utils.callbacks import Iteratorize, Stream
+from utils.prompter import Prompter
 
-from transformers import GenerationConfig, LlamaForCausalLM, LlamaTokenizer,AutoTokenizer
-from federatedgpt_shepherd.utils.callbacks import Iteratorize, Stream
-from federatedgpt_shepherd.utils.prompter import Prompter
+# Check if we have a GPU available
 if torch.cuda.is_available():
     device = "cuda"
 else:
@@ -27,7 +35,6 @@ try:
         device = "mps"
 except:
     pass
-
 
 def main(
     load_8bit: bool = False,
@@ -93,7 +100,6 @@ def main(
         set_peft_model_state_dict(model,lora_weights,"default")
         del lora_weights
 
-
     # unwind broken decapoda-research config
     model.config.pad_token_id = tokenizer.pad_token_id = 0  # unk
     model.config.bos_token_id = 1
@@ -103,7 +109,6 @@ def main(
         model.half()  # seems to fix bugs for some users.
 
     model.eval()
-
 
     def evaluate(
         instruction,
@@ -116,6 +121,9 @@ def main(
         stream_output=True,
         **kwargs,
     ):
+        """
+        Generate model human evaluation setting and WebUI.
+        """
         prompt = prompter.generate_prompt(instruction, input)
         inputs = tokenizer(prompt, return_tensors="pt")
         input_ids = inputs["input_ids"].to(device)
@@ -179,7 +187,7 @@ def main(
         output = tokenizer.decode(s)
         yield prompter.get_response(output)
 
-    sherpherd_UI=gr.Interface(
+    FLockLLM_UI=gr.Interface(
         fn=evaluate,
         inputs=[
             gr.components.Textbox(
@@ -212,13 +220,10 @@ def main(
             )
         ],
         title="FLockLLM",
-        description="FLockLLM is a LLM that has been fine-tuned in a federated manner ",
+        description="FLockLLM is a Large Language Model that has been fine-tuned in a web3-based, decentralized manner.",
     ).queue()
 
-    sherpherd_UI.launch(share=True)
-
-
-
+    FLockLLM_UI.launch(share=True)
 
 
 if __name__ == "__main__":

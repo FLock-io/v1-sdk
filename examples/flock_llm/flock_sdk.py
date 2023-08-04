@@ -6,7 +6,6 @@ from loguru import logger
 
 from functools import wraps
 
-
 class FlockSDK:
     def __init__(self, debug: bool = True):
         self.flask = Flask(__name__)
@@ -71,17 +70,6 @@ class FlockSDK:
         assert set(self.methods.keys()) == set(["aggregate", "evaluate", "train"])
 
     def run(self):
-
-        # import argparse
-        #
-        # parser = argparse.ArgumentParser(description='example')
-        #
-        # parser.add_argument('-p', '--port', type=str, help='http port')
-        #
-        # args = parser.parse_args()
-        #
-        # self._check_registered_methods()
-        # self.flask.run(host="0.0.0.0", port=args.port,debug=self.debug)
 
         self._check_registered_methods()
         self.flask.run(host="0.0.0.0", debug=self.debug)

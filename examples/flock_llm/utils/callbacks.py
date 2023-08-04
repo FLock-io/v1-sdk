@@ -1,16 +1,17 @@
 """
 Helpers to support streaming generate output.
-Borrowed from https://github.com/oobabooga/text-generation-webui/blob/ad37f396fc8bcbab90e11ecf17c56c97bfbd4a9c/modules/callbacks.py
-"""
 
-import gc
+Reference:
+    1. Shepherd: A Lightweight GitHub Platform Supporting Federated Instruction Tuning
+        - https://github.com/JayZhang42/FederatedGPT-Shepherd
+        - Jianyi Zhang and Martin Kuo and Ruiyi Zhang and Guoyin Wang and Saeed Vahidian and Yiran Chen
+    2. https://github.com/oobabooga/text-generation-webui/blob/ad37f396fc8bcbab90e11ecf17c56c97bfbd4a9c/modules/callbacks.py
+"""
 import traceback
 from queue import Queue
 from threading import Thread
 
-import torch
 import transformers
-
 
 class Stream(transformers.StoppingCriteria):
     def __init__(self, callback_func=None):
