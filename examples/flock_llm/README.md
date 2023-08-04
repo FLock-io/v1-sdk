@@ -15,10 +15,13 @@ We prepared the example data for each client (total 4 clients) in the `./data/4`
 
 **To prepare dataset for all clients, run the following command:**
 ```bash
-num_client=10 # The number of clients
-diff_quantity=0 # Whether clients have different amounts of data
 python client_data_allocation.py $num_client $diff_quantity
 ```
+**Note:**
+`$num_client` The number of clients (e.g., 4)
+`$diff_quantity` Whether clients have different amounts of data (e.g., 0 or 1)
+Please replace the `$num_client` and `$diff_quantity` with your own values, and run.
+
 Running this command will save the data files in the folder `./data/str(num_client)`. 
 
 ## Federated Large Language Model Finetuning via FLock Framework
@@ -42,6 +45,6 @@ python global_model_host.py \
       --lora_config_path vicuna-lora-shepherd-7b/
       
 ```
-Note:
+**Note:**
 `--lora_weights_path` is /output/path/to/lora_weights
 `--lora_config_path` is /output/path/to/lora_config
