@@ -223,7 +223,8 @@ def main(
         description="FLockLLM is a Large Language Model that has been fine-tuned in a web3-based, decentralized manner.",
     ).queue()
 
-    FLockLLM_UI.launch(share=True)
+    # FLockLLM_UI.launch(auth=("admin", "pass1234"), server_name='0.0.0.0', server_port=8080, show_error=True,share=True)
+    FLockLLM_UI.launch(auth=("admin", "admin"), server_name='0.0.0.0', show_error=True, share=True)
 
 
 if __name__ == "__main__":
