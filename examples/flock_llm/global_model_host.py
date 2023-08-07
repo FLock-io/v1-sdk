@@ -95,8 +95,7 @@ def main(
         )
         model = prepare_model_for_int8_training(model)
         config = LoraConfig.from_pretrained(lora_config_path)
-        # Handle DDP alignment problem: relocate the model weights to unified device
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
         lora_weights = torch.load(lora_weights_path, map_location=device)
         model = PeftModel(model, config)
         set_peft_model_state_dict(model,lora_weights,"default")
