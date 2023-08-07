@@ -1,5 +1,20 @@
-# FLockLLM
-FLockLLM is a Large Language Model that has been fine-tuned in a web3-based, decentralized manner.
+# FLockLLM: FLock Large Language Model Finetuning Framework
+
+<p align="center">
+<a href=""><img src="assets/flock_logo.png" alt="FLock logo" width="150px"></a>
+</p>
+
+<p align="center">
+<b> FLockLLM is a blockchain-based framework, allowing decentralized fine-tuning of large language models, with on-device data privacy and rewards for individual contributions.</b>
+</p>
+
+<p align="center">
+<img src="https://img.shields.io/badge/python-3.11-blue?style=round-square&logo=Python&color=3776AB" alt="Python" >
+<img src="https://img.shields.io/badge/pytorch-latest-orange?style=round-square&logo=PyTorch&color=EE4C2C" alt="Pytorch" >
+<a href="https://timothyshen1.gitbook.io/flock.io/"><img src="https://img.shields.io/badge/document-English-blue.svg" alt="EN doc"></a>
+<a href="https://discord.gg/gRdDVFw9"><img src="https://dcbadge.vercel.app/api/server/wCp6Q3fsAk?compact=true&style=flat" alt="Discord Follow"></a>
+<a href="https://twitter.com/flock_io"><img src="https://img.shields.io/twitter/follow/MetaGPT?style=social" alt="Twitter Follow"></a>
+</p>
 
 ## Preliminaries
 
@@ -48,3 +63,46 @@ python global_model_host.py \
 **Note:**
 `--lora_weights_path` is /output/path/to/lora_weights
 `--lora_config_path` is /output/path/to/lora_config
+
+## Demo
+### Live demo
+For this demo, we finetuned a Vicuna based pretrained LLM on Dolly dataset with four clients' PCs. The demo is hosted on Gradio, please click the following link to try it out.
+[Original Vicuna]() , [FLockLLM]()
+
+### Example demo details & results analysis
+#### About
+This demonstration results from based on the following settings:
+1. **Pre-trained model:** Vicuna 7B in 8 Bit
+2. **Finetuning adapter model:** LoRa
+3. **Participants:** 4 (2 Proposers, 2 Voters)
+4. **Total communication round:** 4
+5. **Participants' local epoch:** 1
+6. **Stake requirement:** 10
+7. **Total Reward pool:** 1000
+
+#### Training logs
+Here are the training logs on the proposer and voter's local PC
+
+![Voter logs](assets/llm_demo_voter_log.jpg)
+
+<p align="center">Training logs on one proposer (first round role) side</p>
+
+![Proposer logs](assets/llm_demo_proposer_log.png)
+
+<p align="center">Training logs on one voter (first round role) side</p>
+
+#### Finetuned model demo
+We compared the fine-tuned Vicuna model with the original pre-trained Vicuna model. The results can be found as follows:
+`Note: Left screen is FLockLLM (Finetuned), right screen is Vicuna (Original)`
+
+![self_intro](llm_demo_chat1.png)
+
+<p align="center">The self-introduction be finetuned</p>
+
+![domain_qa](llm_demo_chat2.png)
+
+<p align="center">The finetuned LLM shows a preference for answering domain questions</p>
+
+![general_qa](assets/llm_demo_chat3.png)
+
+<p align="center">The finetuned model still has the similiar performance even better for answering general QA.</p>
