@@ -67,7 +67,7 @@ python global_model_host.py \
 ## Demo
 ### Live demo
 For this demo, we finetuned a Vicuna based pretrained LLM on Dolly dataset with four clients' PCs. The demo is hosted on Gradio, please click the following link to try it out.
-[Original Vicuna]() , [FLockLLM]()
+[Original Vicuna](http://34.28.31.67:8003/) , [FLockLLM](http://34.28.31.67:8004/)
 
 ### Example demo details & results analysis
 #### About
