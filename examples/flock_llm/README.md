@@ -1,7 +1,7 @@
 # FLockLLM: FLock Large Language Model Finetuning Framework
 
 <p align="center">
-<a href=""><img src="assets/flock_logo.png" alt="FLock logo" width="150px"></a>
+<a href=""><img src="assets/flock_logo.png" alt="FLock logo" width="300px"></a>
 </p>
 
 <p align="center">
@@ -93,13 +93,14 @@ Here are the training logs on the proposer and voter's local PC
 
 #### Finetuned model demo
 We compared the fine-tuned Vicuna model with the original pre-trained Vicuna model. The results can be found as follows:
+
 `Note: Left screen is FLockLLM (Finetuned), right screen is Vicuna (Original)`
 
-![self_intro](llm_demo_chat1.png)
+![self_intro](assets/llm_demo_chat1.png)
 
 <p align="center">The self-introduction be finetuned</p>
 
-![domain_qa](llm_demo_chat2.png)
+![domain_qa](assets/llm_demo_chat2.png)
 
 <p align="center">The finetuned LLM shows a preference for answering domain questions</p>
 
