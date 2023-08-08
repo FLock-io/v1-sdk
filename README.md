@@ -1,6 +1,6 @@
 # Flock SDK
 <p align="center">
-<a href=""><img src="assets/flock_logo.png" alt="Workflow" width="350px"></a>
+<a href=""><img src="assets/flock_logo.png" alt="logo" width="350px"></a>
 </p>
 <p align="center">
 <img src="https://img.shields.io/badge/python-3.11-blue?style=round-square&logo=Python&color=3776AB" alt="Python" >
@@ -11,6 +11,12 @@
 </p>
 
 Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software development kit that leverages Federated Learning and Blockchain to enable data and computation resources owners to collaboratively train machine learning models using any source data. With Flock SDK, you can define and start ML training tasks on the Flock platform efficiently. 💪
+<p align="center">
+<a href=""><img src="assets/workflow_overview.png" alt="Workflow" width="450px"></a>
+</p>
+<p align="center">
+<b> Flock Workflow</b>
+</p>
 
 ## Key Features
 
