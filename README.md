@@ -14,8 +14,9 @@ Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software devel
 
 ## Key Features
 
-1. 🔗 **Federated Learning**: Flock SDK harnesses the power of Federated Learning, a distributed approach that allows data owners to train machine learning models collaboratively while keeping their data locally.
-2. 🤝 **Collaborative Training**: By sharing source data, Flock enables multiple participants to contribute to the training process, resulting in improved model performance and accuracy.
+1. 🔗 **Federated Learning**: Flock SDK harnesses the power of Federated Learning, a distributed approach that allows data owners to train machine learning models collaboratively while keeping their data locally.  
+
+2. 🤝 **Collaborative Training**: By sharing source data, Flock enables multiple participants to contribute to the training process, resulting in improved model performance and accuracy.  
 3. 💰 **Rewards and Smart Contracts**: Flock's ML training participants are incentivized with rewards and penalties specified by pre-defined smart contracts, ensuring fair and transparent compensation.
 4. 🔒 **Secure and Privacy-preserving**: Flock SDK prioritizes data privacy and security, allowing data owners to retain control over their sensitive information throughout the training process.
 5. 🧩 **Flexible Integration**: The SDK is designed to be easily integrated into your existing workflows and systems, making it a perfect fit for a wide range of applications.
