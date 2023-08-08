@@ -22,11 +22,11 @@ Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software devel
 6. 🧩 **Flexible Integration**: The SDK is designed to be easily integrated into your existing workflows and systems, making it a perfect fit for a wide range of applications.
 
 ## Example Usages
-1. **Flock Large Language Model**: Visit the [`flock_llm`](examples/flock_llm) directory for an example usage of Flock SDK with the Flock Large Language Model(LLM). This demonstrates how to finetune a **Vicuna-7B** using the instruction sets provided by different contributors and train a [`LoRA`](https://arxiv.org/abs/2106.09685) adapeter using federated leaning on chain. 🌐🤖
+1. 🌐🤖 **Flock Large Language Model**: Visit the [`flock_llm`](examples/flock_llm) directory for an example usage of Flock SDK with the Flock Large Language Model(LLM). This demonstrates how to finetune a **Vicuna-7B** using the instruction sets provided by different contributors and train a [`LoRA`](https://arxiv.org/abs/2106.09685) adapeter using federated leaning on chain. 
 
-2. **Credit Card Fraud Detection**: Check out the [`credit_card_fraud_detection`](examples/credit_card_fraud_detection) directory for an example usage of Flock SDK to train a fraud detection model using a federated learning approach. 🛡️💳
+2. 🛡️💳 **Credit Card Fraud Detection**: Check out the [`credit_card_fraud_detection`](examples/credit_card_fraud_detection) directory for an example usage of Flock SDK to train a fraud detection model using a federated learning approach.
 
-3. **MobileNet Example**: Explore the [`mobilenet_example`](examples/mobilenet_example) directory for an example implementation of Flock SDK to train a MobileNet model for image classification, leveraging the power of federated learning. 📸🔎
+3. 📸🔎 **MobileNet Example**: Explore the [`mobilenet_example`](examples/mobilenet_example) directory for an example implementation of Flock SDK to train a MobileNet model for image classification, leveraging the power of federated learning. 
 
 ## Quick Start
 ### Creating a new model
