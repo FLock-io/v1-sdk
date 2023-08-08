@@ -1,7 +1,7 @@
 # FLockLLM: FLock Large Language Model Finetuning Framework
 
 <p align="center">
-<a href=""><img src="assets/workflow_overview.png" alt="FLock logo" width="300px"></a>
+<a href=""><img src="assets/workflow_overview.png" alt="Workflow" width="300px"></a>
 </p>
 
 <p align="center">
