@@ -1,7 +1,35 @@
 # Flock SDK
-An SDK for building applications on top of FLock V1
+<p align="center">
+<a href=""><img src="assets/flock_logo.png" alt="Workflow" width="350px"></a>
+</p>
+<p align="center">
+<img src="https://img.shields.io/badge/python-3.11-blue?style=round-square&logo=Python&color=3776AB" alt="Python" >
+<img src="https://img.shields.io/badge/pytorch-latest-orange?style=round-square&logo=PyTorch&color=EE4C2C" alt="Pytorch" >
+<a href="https://timothyshen1.gitbook.io/flock.io/"><img src="https://img.shields.io/badge/document-English-blue.svg" alt="EN doc"></a>
+<a href="https://discord.gg/gRdDVFw9"><img src="https://dcbadge.vercel.app/api/server/gRdDVFw9?compact=true&style=flat" alt="Discord Follow"></a>
+<a href="https://twitter.com/flock_io"><img src="https://img.shields.io/twitter/follow/flock_io?style=social" alt="Twitter Follow"></a>
+</p>
 
-## Creating a new model
+Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software development kit that leverages Federated Learning and Blockchain to enable data and computation resources owners to collaboratively train machine learning models using any source data. With Flock SDK, you can define and start ML training tasks on the Flock platform efficiently. 💪
+
+## Key Features
+
+1. 🔗 **Federated Learning**: Flock SDK harnesses the power of Federated Learning, a distributed approach that allows data owners to train machine learning models collaboratively while keeping their data locally.  
+
+2. 🤝 **Collaborative Training**: By sharing source data, Flock enables multiple participants to contribute to the training process, resulting in improved model performance and accuracy.  
+3. 💰 **Rewards and Smart Contracts**: Flock's ML training participants are incentivized with rewards and penalties specified by pre-defined smart contracts, ensuring fair and transparent compensation.
+4. 🔒 **Secure and Privacy-preserving**: Flock SDK prioritizes data privacy and security, allowing data owners to retain control over their sensitive information throughout the training process.
+5. 🧩 **Flexible Integration**: The SDK is designed to be easily integrated into your existing workflows and systems, making it a perfect fit for a wide range of applications.
+
+## Example Usages
+1. 🌐🤖 **Flock Large Language Model**: Visit the [`flock_llm`](examples/flock_llm) directory for an example usage of Flock SDK with the Flock Large Language Model(LLM). This demonstrates how to finetune a **Vicuna-7B** using the instruction sets provided by different contributors and train a [`LoRA`](https://arxiv.org/abs/2106.09685) adapeter using federated leaning on chain. 
+
+2. 🛡️💳 **Credit Card Fraud Detection**: Check out the [`credit_card_fraud_detection`](examples/credit_card_fraud_detection) directory for an example usage of Flock SDK to train a fraud detection model using a federated learning approach.
+
+3. 📸🔎 **MobileNet Example**: Explore the [`mobilenet_example`](examples/mobilenet_example) directory for an example implementation of Flock SDK to train a MobileNet model for image classification, leveraging the power of federated learning. 
+
+## Quick Start
+### Creating a new model
 
 Prerequisites:
 You must have `docker` and `docker compose` [installed](https://docs.docker.com/engine/install/) and set up to [run as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
