@@ -10,7 +10,7 @@
 <a href="https://twitter.com/flock_io"><img src="https://img.shields.io/twitter/follow/flock_io?style=social" alt="Twitter Follow"></a>
 </p>
 
-Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software development kit that leverages Federated Learning to enable data owners to collaboratively train machine learning models using any source data. With Flock SDK, you can define and start ML training tasks on the Flock platform efficiently. 💪
+Welcome to the Flock SDK repository! 🚀 Flock SDK is a powerful software development kit that leverages Federated Learning and Blockchain to enable data and computation resources owners to collaboratively train machine learning models using any source data. With Flock SDK, you can define and start ML training tasks on the Flock platform efficiently. 💪
 
 ## Key Features
 
