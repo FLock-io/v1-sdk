@@ -89,7 +89,7 @@ def main(
     else:
         model = LlamaForCausalLM.from_pretrained(
             base_model,
-            load_in_8bit=True,
+            load_in_8bit=load_8bit,
             torch_dtype=torch.float16,
             device_map="auto",
         )
