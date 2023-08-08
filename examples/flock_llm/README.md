@@ -1,7 +1,7 @@
 # FLockLLM: FLock Large Language Model Finetuning Framework
 
 <p align="center">
-<a href=""><img src="assets/flock_logo.png" alt="FLock logo" width="300px"></a>
+<a href=""><img src="assets/workflow_overview.png" alt="FLock logo" width="300px"></a>
 </p>
 
 <p align="center">
@@ -67,7 +67,7 @@ python global_model_host.py \
 ## Demo
 ### Live demo
 For this demo, we finetuned a Vicuna based pretrained LLM on Dolly dataset with four clients' PCs. The demo is hosted on Gradio, please click the following link to try it out.
-[Original Vicuna](http://34.28.31.67:8003/) , [FLockLLM](http://34.28.31.67:8004/)
+[Original Vicuna](http://209.20.157.253:7860/) , [FLockLLM](http://209.20.157.253:7860/)
 
 ### Example demo details & results analysis
 #### About
