@@ -102,6 +102,11 @@ We compared the fine-tuned Vicuna model with the original pre-trained Vicuna mod
 
 <p align="center">The finetuned LLM shows a preference for answering domain questions</p>
 
+![domain_qa](assets/llm_demo_chat4.png)
+
+<p align="center">The finetuned LLM could answer most recent events/news</p>
+
+
 ![general_qa](assets/llm_demo_chat3.png)
 
 <p align="center">The finetuned model still has the similiar performance even better for answering general QA.</p>
