@@ -1,46 +1,41 @@
-# Prompt templates
+📁 **Prompt Templates Directory**
 
-This directory contains template styles for the prompts used to finetune LoRA models.
+Welcome to the central repository for template styles used in fine-tuning LoRA models.
 
-## Format
+## 📌 **Structure & Formatting**
 
-A template is described via a JSON file with the following keys:
+Each template is housed in a JSON file and includes the following attributes:
 
-- `prompt_input`: The template to use when input is not None. Uses `{instruction}` and `{input}` placeholders.
-- `prompt_no_input`: The template to use when input is None. Uses `{instruction}` placeholders.
-- `description`: A short description of the template, with possible use cases.
-- `response_split`: The text to use as separator when cutting real response from the model output.
+- 📜 `prompt_input`: This is used when an input is provided. It can accommodate `{instruction}` and `{input}` placeholders.
+- 🚫 `prompt_no_input`: This is employed when there's no available input and includes the `{instruction}` placeholder.
+- 📝 `description`: Provides a concise explanation and details potential use cases for the template.
+- ✂️ `response_split`: Identifies the delimiter for separating the actual model response from the output.
 
-No `{response}` placeholder was used, since the response is always the last element of the template and is just to be concatenated to the rest.
+> 🚨 **Note**: The `{response}` placeholder is absent, as the response is always the last element of the template, appended to the existing content.
 
-## Example template
+## 📄 **Example Template**
 
-The default template, used unless otherwise specified, is `alpaca.json`
+Unless otherwise specified, the default template is `alpaca.json`:
 
 ```json
 {
-    "description": "Template used by Alpaca-LoRA.",
-    "prompt_input": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n",
-    "prompt_no_input": "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\n{instruction}\n\n### Response:\n",
+    "description": "This template is used by Alpaca-LoRA.",
+    "prompt_input": "The content below presents a task description and relevant context. Please draft a response that meets the requirement.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n",
+    "prompt_no_input": "The instruction below defines a specific task. Create a response that appropriately fulfills the requirement.\n\n### Instruction:\n{instruction}\n\n### Response:\n",
     "response_split": "### Response:"    
 }
-
 ```
 
-## Current templates
+📚 Available Templates
+1. **alpaca** 🦙:
+   The universal template used in most LoRA fine-tuning tasks.
+2. **alpaca_legacy** ⌛:
+   An original version from the alpaca repository, notable for lacking a newline (\n) after the response section. Retained for comparative studies and experiments.
+3. **alpaca_short** 📏:
+   A brief version of the alpaca template, offering similar effectiveness while conserving tokens. Models developed with the main template can also be prompted using this shortened variant. Further experimentation and contributions are welcome.
+4. **vigogne** 🦙:
+   This is the French version of the alpaca template. Used for training the "Vigogne" LoRA, it is suitable for inquiries or additional fine-tuning processes.
 
-### alpaca
+## 📖 **References**
 
-Default template used for generic LoRA fine tunes so far.
-
-### alpaca_legacy
-
-Legacy template used by the original alpaca repo, with no `\n` after the response field. Kept for reference and experiments.
-
-### alpaca_short
-
-A trimmed down alpaca template which seems to perform just as well and spare some tokens. Models created with the default template seem to be queryable by the short tempalte as well. More experiments are welcome.
-
-### vigogne
-
-The default alpaca template, translated to french. This template was used to train the "Vigogne" LoRA and is to be used to query it, or for extra fine tuning.
+- [Shepherd](https://github.com/JayZhang42/FederatedGPT-Shepherd)
