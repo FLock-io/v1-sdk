@@ -6,7 +6,7 @@
 <img src="https://img.shields.io/badge/python-3.11-blue?style=round-square&logo=Python&color=3776AB" alt="Python" >
 <img src="https://img.shields.io/badge/pytorch-latest-orange?style=round-square&logo=PyTorch&color=EE4C2C" alt="Pytorch" >
 <a href="https://timothyshen1.gitbook.io/flock.io/"><img src="https://img.shields.io/badge/document-English-blue.svg" alt="EN doc"></a>
-<a href="https://discord.gg/gRdDVFw9"><img src="https://dcbadge.vercel.app/api/server/gRdDVFw9?compact=true&style=flat" alt="Discord Follow"></a>
+<a href="https://discord.gg/ay8MnJCg2W"><img src="https://dcbadge.vercel.app/api/server/gRdDVFw9?compact=true&style=flat" alt="Discord Follow"></a>
 <a href="https://twitter.com/flock_io"><img src="https://img.shields.io/twitter/follow/flock_io?style=social" alt="Twitter Follow"></a>
 </p>
 
