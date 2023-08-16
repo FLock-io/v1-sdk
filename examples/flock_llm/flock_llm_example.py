@@ -313,6 +313,7 @@ class FlockModel:
         training_args = TrainingArguments(
             output_dir=self.output_dir,
             per_device_eval_batch_size=self.local_micro_batch_size,
+            report_to=None
         )
 
         trainer = transformers.Trainer(
