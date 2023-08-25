@@ -1,19 +1,3 @@
-# import os
-# from dotenv import load_dotenv
-# from pinatapy import PinataPy
-
-# load_dotenv()
-
-# PINATA_API_KEY = os.getenv("PINATA_API_KEY")
-# PINATA_SECRET_API_KEY = os.getenv("PINATA_SECRET_API_KEY")
-
-# pinata = PinataPy(PINATA_API_KEY, PINATA_SECRET_API_KEY)
-
-# response = pinata.pin_file_to_ipfs(
-#     path_to_file="/var/folders/5m/6sgc559j5d19f_nm41wg9t900000gn/T/tmp.V5eZlimQ")
-
-# print(response)
-
 import os
 from dotenv import load_dotenv
 from pinatapy import PinataPy
