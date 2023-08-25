@@ -22,7 +22,12 @@ class CNNClassifier(nn.Module):
         self.conv2 = nn.Conv1d(100, 100, 5, padding=2)
         self.relu2 = nn.ReLU()
 
-        self.linear = nn.Linear(100, 1)
+
+        self.fc3 = nn.Sequential(
+            nn.Linear(100, 1),
+            nn.Sigmoid()
+        )
+
 
     def forward(self, x):
         embs = self.embedding(x)
@@ -32,6 +37,6 @@ class CNNClassifier(nn.Module):
         h_size = h.size(dim=2)
         h = F.avg_pool1d(h, h_size).squeeze(dim=2)
 
-        logits = self.linear(h)
+        logits = self.fc3(h)
 
         return logits

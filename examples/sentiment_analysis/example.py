@@ -73,7 +73,7 @@ class FlockModel:
         if parameters is not None:
             model.load_state_dict(torch.load(io.BytesIO(parameters)))
         model.train()
-        optimizer = torch.optim.SGD(
+        optimizer = torch.optim.Adam(
             model.parameters(),
             lr=self.lr,
         )
@@ -88,7 +88,7 @@ class FlockModel:
             for batch_idx, (inputs, targets) in enumerate(data_loader):
                 optimizer.zero_grad()
 
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                inputs, targets = inputs.to(self.device), targets.to(self.device).unsqueeze(1)
                 outputs = model(inputs)
 
                 loss = criterion(outputs, targets)
@@ -136,7 +136,8 @@ class FlockModel:
         test_total = 0
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(data_loader):
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                inputs, targets = inputs.to(self.device), targets.to(self.device).unsqueeze(1)
+
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
 
@@ -202,6 +203,7 @@ if __name__ == "__main__":
         lr=lr,
         emb_size=emb_size,
     )
+
     flock.register_train(flock_model.train)
     flock.register_evaluate(flock_model.evaluate)
     flock.register_aggregate(flock_model.aggregate)
