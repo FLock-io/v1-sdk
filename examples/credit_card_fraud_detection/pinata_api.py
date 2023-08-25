@@ -9,7 +9,7 @@ PINATA_SECRET_API_KEY = os.getenv("PINATA_SECRET_API_KEY")
 
 def pin_file_to_ipfs(path_to_file):
     pinata = PinataPy(PINATA_API_KEY, PINATA_SECRET_API_KEY)
-    response = pinata.pin_file_to_ipfs(path_to_file)
+    response = pinata.pin_file_to_ipfs(path_to_file, "/", False)
     return response
 
 if __name__ == "__main__":
