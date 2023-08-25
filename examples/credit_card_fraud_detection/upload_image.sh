@@ -1,16 +1,21 @@
 #!/bin/bash
 set -e
 
-OUTPUT_FILE=`mktemp`
+IMAGE_TAG="flock_model"
+OUTPUT_FILE=$(mktemp)
+echo "Building the model image."
+docker build -t $IMAGE_TAG .
 
 time (tar -czf $OUTPUT_FILE .)
 
-echo "Uploading the compressed archive to IPFS.."
-json=`curl -F "file=@$OUTPUT_FILE" ipfs.flock.io/api/v0/add`
+# Use the pinata_api.py script to pin the file to IPFS
+echo "Uploading the compressed image to IPFS.."
+response=$(python pinata_api.py "$OUTPUT_FILE")
 
-# Uncomment if you'd like to upload to your local IPFS
-# json=`curl -F "file=@$OUTPUT_FILE" 127.0.0.1:5001/api/v0/add`
+# Extract the IpfsHash from the response using Python
+echo "Extracting IpfsHash.."
+ipfs_hash=$(python -c "import json; data = $response; print(data.get('IpfsHash', ''))")
+echo "Model definition IPFS hash: $ipfs_hash"
 
-hash=`echo $json | grep -o '"Hash":"[^"]*' | grep -o '[^"]*$'`
+# Clean up the temporary output file
 rm $OUTPUT_FILE
-echo "Model definition IPFS hash: $hash"
