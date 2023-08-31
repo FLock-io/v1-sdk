@@ -1,6 +1,6 @@
 import json
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, random_split, TensorDataset
 import io
 import torch
 from pandas import DataFrame
@@ -11,21 +11,12 @@ class CreditFraudNetMLP(nn.Module):
     def __init__(self, num_features, num_classes):
         super(CreditFraudNetMLP, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(num_features, 64),
-            nn.ReLU(),
-            nn.Dropout(0.2)
+            nn.Linear(num_features, 64), nn.ReLU(), nn.Dropout(0.2)
         )
 
-        self.fc2 = nn.Sequential(
-            nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.Dropout(0.5)
-        )
+        self.fc2 = nn.Sequential(nn.Linear(64, 128), nn.ReLU(), nn.Dropout(0.5))
 
-        self.fc3 = nn.Sequential(
-            nn.Linear(128, num_classes),
-            nn.Sigmoid()
-        )
+        self.fc3 = nn.Sequential(nn.Linear(128, num_classes), nn.Sigmoid())
 
     def forward(self, x):
         x = self.fc1(x)
@@ -69,21 +60,45 @@ class ExampleTorchModel(FlockModel):
         test_len = len(dataset) - train_len
 
         # Split the dataset
-        train_dataset, test_dataset = random_split(
-            dataset_df, [train_len, test_len])
+        train_dataset, test_dataset = random_split(dataset_df, [train_len, test_len])
 
+        X_df = dataset_df.iloc[:, :-1]
+        y_df = dataset_df.iloc[:, -1]
+
+        X_tensor = torch.tensor(X_df.values, dtype=torch.float32)
+        y_tensor = torch.tensor(y_df.values, dtype=torch.float32)
+
+        y_tensor = y_tensor.unsqueeze(1)
+        dataset_in_dataset = TensorDataset(X_tensor, y_tensor)
+        self.train_data_loader = DataLoader(
+            dataset_in_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=False,
+        )
+        self.test_data_loader = DataLoader(
+            dataset_in_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=False,
+        )
         # Create data loaders
-        self.train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True)
-        self.test_loader = DataLoader(
-            test_dataset, batch_size=batch_size, shuffle=True)
+        """
+        self.train_data_loader = DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True
+        )
+        self.test_data_loader = DataLoader(
+            test_dataset, batch_size=batch_size, shuffle=True
+        )
+        """
 
     def get_model(self):
         return CreditFraudNetMLP(num_features=self.features, num_classes=1)
 
     def train(self, parameters) -> bytes:
         model = self.get_model()
-        model.load_state_dict(torch.load(io.BytesIO(parameters)))
+        if parameters != None:
+            model.load_state_dict(torch.load(io.BytesIO(parameters)))
 
         model.train()
         optimizer = torch.optim.SGD(
@@ -100,8 +115,7 @@ class ExampleTorchModel(FlockModel):
             for inputs, targets in self.train_data_loader:
                 optimizer.zero_grad()
 
-                inputs, targets = inputs.to(
-                    self.device), targets.to(self.device)
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
 
                 loss = criterion(outputs, targets)
@@ -126,7 +140,8 @@ class ExampleTorchModel(FlockModel):
         criterion = torch.nn.BCELoss()
 
         model = self.get_model()
-        model.load_state_dict(torch.load(io.BytesIO(parameters)))
+        if parameters != None:
+            model.load_state_dict(torch.load(io.BytesIO(parameters)))
         model.to(self.device)
         model.eval()
 
@@ -135,8 +150,7 @@ class ExampleTorchModel(FlockModel):
         test_total = 0
         with torch.no_grad():
             for inputs, targets in self.test_data_loader:
-                inputs, targets = inputs.to(
-                    self.device), targets.to(self.device)
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
 
@@ -175,10 +189,6 @@ if __name__ == "__main__":
     epochs = 1
     lr = 0.000001
     features = 30
-    model = ExampleTorchModel(
-        features,
-        epochs=epochs,
-        lr=lr
-    )
+    model = ExampleTorchModel(features, epochs=epochs, lr=lr)
     sdk = FlockSDK(model)
     sdk.run()
