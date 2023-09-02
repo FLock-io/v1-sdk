@@ -104,13 +104,13 @@ class FlockModel:
             logger.debug(f"Epoch {epoch}")
             batch_loss = []
             for batch_idx, (inputs, targets) in enumerate(data_loader):
+                opti.zero_grad()
                 # logger.info(f"Inputs: {inputs}")
                 # logger.info(f"Targets: {targets}")
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs = model(inputs)
                 # logger.info(f"Outputs: {outputs}")
                 loss = loss_func(outputs, targets)
-                opti.zero_grad()
                 loss.backward()
                 opti.step()
                 batch_loss.append(loss.item())
