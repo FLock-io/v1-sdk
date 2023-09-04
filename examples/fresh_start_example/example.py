@@ -1,11 +1,17 @@
-from flock_sdk import FlockSDK
+import json
+from flock_sdk import FlockSDK, FlockModel
 
 flock = FlockSDK()
 
 
-class FlockModel:
-    def get_starting_parameters(self) -> bytes:
-        return b""
+class FreshStartModel(FlockModel):
+    def init_dataset(self, dataset_path: str) -> None:
+        self.dataset_path = dataset_path
+        with open(dataset_path, "r") as f:
+            self.dataset = json.load(f)
+
+    def get_model(self):
+        pass
 
     """
     train() should:
@@ -16,8 +22,9 @@ class FlockModel:
     """
 
     def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
-        if parameters == None:
-            parameters = self.get_starting_parameters()
+        model = self.get_model()
+        if parameters != None:
+            model.apply_parameters(parameterss)
         new_parameters = b""
         return new_parameters
 
@@ -30,8 +37,9 @@ class FlockModel:
     """
 
     def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
-        if parameters == None:
-            parameters = self.get_starting_parameters()
+        model = self.get_model()
+        if parameters != None:
+            model.apply_parameters(parameterss)
         accuracy = 0.25
         return accuracy
 
@@ -46,8 +54,6 @@ class FlockModel:
 
 
 if __name__ == "__main__":
-    model = FlockModel()
-    flock.register_train(model.train)
-    flock.register_evaluate(model.evaluate)
-    flock.register_aggregate(model.aggregate)
-    flock.run()
+    model = FreshStartModel()
+    sdk = FlockSDK(model)
+    sdk.run()

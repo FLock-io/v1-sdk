@@ -1,15 +1,11 @@
 #!/bin/bash
 set -e
 
-IMAGE_TAG="flock_model"
 OUTPUT_FILE=`mktemp`
-echo "Building the model image."
-docker build -t $IMAGE_TAG .
 
-echo "Saving the docker image to a file and compressing it. It may take a while.."
-time (docker save $IMAGE_TAG | xz -T 0 > $OUTPUT_FILE)
+time (tar -czf $OUTPUT_FILE .)
 
-echo "Uploading the compressed image to IPFS.."
+echo "Uploading the compressed archive to IPFS.."
 json=`curl -F "file=@$OUTPUT_FILE" ipfs.flock.io/api/v0/add`
 
 # Uncomment if you'd like to upload to your local IPFS
