@@ -1,4 +1,4 @@
-FROM flock_base
+FROM rodrigoflock/flock_base
 
 WORKDIR /app
 

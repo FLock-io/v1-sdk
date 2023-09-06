@@ -1,4 +1,4 @@
-FROM python:3.11.3
+FROM rodrigoflock/flock_base
 
 WORKDIR /app
 

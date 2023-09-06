@@ -1,10 +1,7 @@
 #!/bin/bash
 set -e
 
-IMAGE_TAG="flock_model"
-OUTPUT_FILE=$(mktemp)
-echo "Building the model image."
-docker build -t $IMAGE_TAG .
+OUTPUT_FILE=`mktemp`
 
 time (tar -czf "${OUTPUT_FILE}.xz" .)
 
