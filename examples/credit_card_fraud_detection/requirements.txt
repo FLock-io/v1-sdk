@@ -9,3 +9,7 @@ torchvision==0.15.2+cpu; sys_platform == 'linux'
 
 pandas
 numpy
+# lightning
+pinatapy-vourhey
+python-dotenv
+requests

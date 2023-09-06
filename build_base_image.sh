@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t flock_base .
+docker build -t rodrigoflock/flock_base .

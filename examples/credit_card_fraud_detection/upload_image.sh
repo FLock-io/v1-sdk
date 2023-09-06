@@ -3,14 +3,16 @@ set -e
 
 OUTPUT_FILE=`mktemp`
 
-time (tar -czf $OUTPUT_FILE .)
+time (tar -czf "${OUTPUT_FILE}.xz" .)
 
-echo "Uploading the compressed archive to IPFS.."
-json=`curl -F "file=@$OUTPUT_FILE" ipfs.flock.io/api/v0/add`
+# Use the pinata_api.py script to pin the file to IPFS
+echo "Uploading the compressed image to IPFS.."
+response=$(python pinata_api.py "${OUTPUT_FILE}.xz")
 
-# Uncomment if you'd like to upload to your local IPFS
-# json=`curl -F "file=@$OUTPUT_FILE" 127.0.0.1:5001/api/v0/add`
+# Extract the IpfsHash from the response using Python
+echo "Extracting IpfsHash.."
+ipfs_hash=$(python -c "import json; data = $response; print(data.get('IpfsHash', ''))")
+echo "Model definition IPFS hash: $ipfs_hash"
 
-hash=`echo $json | grep -o '"Hash":"[^"]*' | grep -o '[^"]*$'`
-rm $OUTPUT_FILE
-echo "Model definition IPFS hash: $hash"
+# Clean up the temporary output file
+rm "${OUTPUT_FILE}.xz"
