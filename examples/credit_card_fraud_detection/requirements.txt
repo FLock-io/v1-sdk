@@ -4,8 +4,11 @@
 # torchvision==0.15.2+cu117; sys_platform == 'linux'
 
 # CPU 1.85GB
-torch==2.0.1+cpu; sys_platform == 'linux'
-torchvision==0.15.2+cpu; sys_platform == 'linux'
+# torch==2.0.1+cpu; sys_platform == 'linux'
+# torchvision==0.15.2+cpu; sys_platform == 'linux'
+
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
 
 pandas
 numpy

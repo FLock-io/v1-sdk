@@ -23,4 +23,5 @@ pandas
 scikit-learn
 tqdm
 numpy
-lightning
+# lightning
+python-dotenv
