@@ -1,5 +1,4 @@
-flock-sdk==0.0.1
-
+flock_sdk
 # For non ARM architecture
 # --find-links https://download.pytorch.org/whl/torch_stable.html
 # CUDA 4.76GB
@@ -23,5 +22,6 @@ pandas
 scikit-learn
 tqdm
 numpy
+loguru
 # lightning
 python-dotenv
