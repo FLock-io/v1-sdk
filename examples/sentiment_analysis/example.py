@@ -7,7 +7,7 @@ from data_preprocessing import IndexesDataset, get_loader
 from pandas import DataFrame
 import numpy as np
 import random
-
+import json
 
 
 class FlockModel:
@@ -69,7 +69,7 @@ class FlockModel:
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[list]) -> bytes:
+    def train(self, parameters: bytes | None) -> bytes:
 
         model = self.get_starting_model()
         if parameters is not None:
@@ -123,7 +123,7 @@ class FlockModel:
     5. Output the accuracy of the model parameters on the dataset as a float
     """
 
-    def evaluate(self, parameters: bytes | None, dataset: list[list]) -> float:
+    def evaluate(self, parameters: bytes | None) -> float:
         criterion = torch.nn.BCELoss()
 
         model = self.get_starting_model()
