@@ -391,7 +391,7 @@ if __name__ == "__main__":
     """
     Hyper parameters
     """
-    global_model = 'model/vicuna-7b-all-v1.1'
+    global_model = 'lmsys/vicuna-7b-v1.1'
     data_path = 'data/4'
     output_dir = 'vicuna-lora-shepherd-7b/'
     # FL hyperparamas
