@@ -7,8 +7,7 @@ from data_preprocessing import IndexesDataset, get_loader
 from pandas import DataFrame
 import numpy as np
 import random
-
-flock = FlockSDK()
+import json
 
 
 class FlockModel:
@@ -40,14 +39,18 @@ class FlockModel:
             device = "cuda"
         else:
             device = "cpu"
-        self.device = torch.device(device)
-
-    def process_dataset(self, dataset: list[list]):
+        self.device = torch.device(device)        
+    
+    def init_dataset(self, dataset_path: str) -> None:
+        self.datasetpath = dataset_path
+        with open(dataset_path, "r") as f:
+            dataset = json.load(f)
         dataset_df = IndexesDataset(dataset, max_samples_count=10000, device=device)
         logger.debug("Processing dataset")
-        return get_loader(
+        self.test_data_loader = get_loader(
             dataset_df, batch_size=batch_size
         )
+
 
     def get_starting_model(self):
         seed = 0
@@ -66,8 +69,7 @@ class FlockModel:
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[list]) -> bytes:
-        data_loader = self.process_dataset(dataset)
+    def train(self, parameters: bytes | None) -> bytes:
 
         model = self.get_starting_model()
         if parameters is not None:
@@ -85,7 +87,7 @@ class FlockModel:
             train_loss = 0.0
             train_correct = 0
             train_total = 0
-            for batch_idx, (inputs, targets) in enumerate(data_loader):
+            for batch_idx, (inputs, targets) in enumerate(self.test_data_loader):
                 optimizer.zero_grad()
 
                 inputs, targets = inputs.to(self.device), targets.to(self.device).unsqueeze(1)
@@ -121,8 +123,7 @@ class FlockModel:
     5. Output the accuracy of the model parameters on the dataset as a float
     """
 
-    def evaluate(self, parameters: bytes | None, dataset: list[list]) -> float:
-        data_loader = self.process_dataset(dataset)
+    def evaluate(self, parameters: bytes | None) -> float:
         criterion = torch.nn.BCELoss()
 
         model = self.get_starting_model()
@@ -135,7 +136,7 @@ class FlockModel:
         test_loss = 0.0
         test_total = 0
         with torch.no_grad():
-            for batch_idx, (inputs, targets) in enumerate(data_loader):
+            for batch_idx, (inputs, targets) in enumerate(self.test_data_loader):
                 inputs, targets = inputs.to(self.device), targets.to(self.device).unsqueeze(1)
 
                 outputs = model(inputs)
@@ -204,7 +205,5 @@ if __name__ == "__main__":
         emb_size=emb_size,
     )
 
-    flock.register_train(flock_model.train)
-    flock.register_evaluate(flock_model.evaluate)
-    flock.register_aggregate(flock_model.aggregate)
-    flock.run()
+    sdk = FlockSDK(flock_model)
+    sdk.run()
