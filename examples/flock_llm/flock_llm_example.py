@@ -28,10 +28,9 @@ from flock_sdk import FlockSDK
 from fl_libs import GeneralClient
 from utils.prompter import Prompter
 
-flock = FlockSDK()
 datasets.utils.logging.set_verbosity_error()
 
-class FlockModel:
+class FlockModel():
     def __init__(
             self,
             # model/data params
@@ -451,7 +450,6 @@ if __name__ == "__main__":
 
         client_id=client_id,
     )
-    flock.register_train(flock_model.train)
-    flock.register_evaluate(flock_model.evaluate)
-    flock.register_aggregate(flock_model.aggregate)
-    flock.run()
+    sdk = FlockSDK(flock_model)
+    sdk.run()
+
