@@ -42,4 +42,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 5000/tcp
-CMD [ "python3.11", "./flock_llm_example.py" ]
+CMD [ "python3.11", "flock_llm_example.py" ]
