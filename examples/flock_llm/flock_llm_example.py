@@ -164,10 +164,10 @@ class FlockModel():
         self.local_train_dataset, self.local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt,
                                                                     voter_val_set_size)
 
-    def load_dataset(self, generate_and_tokenize_prompt, voter_val_set_size):
+    def init_dataset(self,dataset_path, voter_val_set_size=5):
         logger.info("\nPreparing the local training and validation dataset")
 
-        self.local_data_path = os.path.join(data_path, "local_training_{}.json".format(self.client_id))
+        self.local_data_path = os.path.join(dataset_path)
         self.local_data = load_dataset("json", data_files=self.local_data_path)
 
         if voter_val_set_size > 0:
@@ -175,13 +175,13 @@ class FlockModel():
                 test_size=voter_val_set_size, shuffle=True, seed=self.seed
             )
             self.local_train_dataset = (
-                local_train_val["train"].shuffle().map(generate_and_tokenize_prompt)
+                local_train_val["train"].shuffle().map(self.generate_and_tokenize_prompt)
             )
             self.local_eval_dataset = (
-                local_train_val["test"].shuffle().map(generate_and_tokenize_prompt)
+                local_train_val["test"].shuffle().map(self.generate_and_tokenize_prompt)
             )
         else:
-            self.local_train_dataset = self.local_data["train"].shuffle().map(generate_and_tokenize_prompt)
+            self.local_train_dataset = self.local_data["train"].shuffle().map(self.generate_and_tokenize_prompt)
             self.local_eval_dataset = None
         self.voter_val_set_size = voter_val_set_size
 
