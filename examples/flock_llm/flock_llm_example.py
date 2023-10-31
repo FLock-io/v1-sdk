@@ -161,7 +161,7 @@ class FlockModel():
         """
             Dataset loading
         """
-        self.local_train_dataset, self.local_eval_dataset = self.load_dataset(self.generate_and_tokenize_prompt,
+        self.local_train_dataset, self.local_eval_dataset = self.init_dataset(self.generate_and_tokenize_prompt,
                                                                     voter_val_set_size)
 
     def init_dataset(self,dataset_path, voter_val_set_size=5):
