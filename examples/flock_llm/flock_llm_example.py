@@ -252,7 +252,7 @@ class FlockModel():
     4. Output the model parameters retrained on the dataset AS BYTES
     """
 
-    def train(self, parameters: bytes | None, dataset: list[dict]) -> bytes:
+    def train(self, parameters: bytes | None) -> bytes:
         self.local_comm_round_idx += 1
 
         # Load model template with pre-trained weights
@@ -293,7 +293,7 @@ class FlockModel():
     5. Output the accuracy of the model parameters on the dataset as a float
     """
 
-    def evaluate(self, parameters: bytes | None, dataset: list[dict]) -> float:
+    def evaluate(self, parameters: bytes | None) -> float:
         model = self.get_starting_model()
         if parameters is not None:
             logger.debug("Loading latest global adapter model parameters to local model...")
