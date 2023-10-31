@@ -158,11 +158,7 @@ class FlockModel():
             self.device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
             self.gradient_accumulation_steps = self.gradient_accumulation_steps // world_size
 
-        """
-            Dataset loading
-        """
-        self.local_train_dataset, self.local_eval_dataset = self.init_dataset(self.generate_and_tokenize_prompt,
-                                                                    voter_val_set_size)
+
 
     def init_dataset(self,dataset_path, voter_val_set_size=5):
         logger.info("\nPreparing the local training and validation dataset")
