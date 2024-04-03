@@ -110,3 +110,16 @@ We compared the fine-tuned Vicuna model with the original pre-trained Vicuna mod
 ![general_qa](assets/llm_demo_chat3.png)
 
 <p align="center">The finetuned model still has the similiar performance even better for answering general QA.</p>
+
+
+# Additional Information (new S3)
+put the s3 credentials in the `~/.aws/credentials` file
+
+```bash
+[default]
+aws_access_key_id = YOUR_ACCESS_KEY_ID
+aws_secret_access_key = YOUR_SECRET_ACCESS_KEY
+```
+
+## TODO
+- [ ] Optimize the model host

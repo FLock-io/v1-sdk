@@ -6,8 +6,6 @@ black
 black[jupyter]
 datasets
 fire
-git+https://github.com/huggingface/peft.git
-git+https://github.com/huggingface/transformers.git
 gradio
 sentencepiece
 loguru
@@ -19,5 +17,11 @@ numpy
 wandb
 google-api-python-client
 scipy
+torch
+torchvision
+transformers==4.38.2
 
-
+peft==0.9.0
+trl
+flock_sdk
+boto3

@@ -1,0 +1,42 @@
+common_args:
+  project_name: "FLockLLM_finetune"
+  mode: "experiment" # Options: 1. experiment 2. deployment
+  random_seed: 1993 # Note: only works for experiment mode
+
+data_args:
+  data_path: "dataset.json"
+
+model_args:
+  foundation_model: "vicuna-7b-v1.5"
+  foundation_model_pre_trained_weights_path: "model/vicuna-7b-v1.5"
+  finetune_adapter: "qlora"
+  lora_r: 4
+  lora_alpha: 4
+  lora_dropout: 0.05
+  lora_target_modules: [] # Options: "q_proj","k_proj","v_proj","o_proj" Defaults: [] (let system auto search)
+
+train_args:
+  proposer_train_batch_size: 32
+  proposer_train_micro_batch_size: 8
+  proposer_num_epochs: 1
+  proposer_learning_rate: 0.0003
+  proposer_val_set_size: 0
+  proposer_save_steps: 3
+  cutoff_len: 512
+  proposer_train_group_by_length: false
+  proposer_train_optimizer: "paged_adamw_8bit"
+  proposer_train_lr_scheduler_type: "constant"
+  proposer_train_warmup_steps: 1
+  proposer_train_weight_decay: 0.05
+  proposer_train_block_size: 8
+  federated_optimizer: "fedavg"
+
+evaluation_args:
+  voter_val_set_size: 5
+
+tracking_args:
+  finetune_adapter_checkpoint_save_dir: "output/checkpoints/gemma-2b"
+  proposer_train_gradient_checkpointing: true
+  proposer_train_logging_steps: 10
+  report_to: "wandb"
+  save_total_limit: 3
