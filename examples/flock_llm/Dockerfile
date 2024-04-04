@@ -1,4 +1,5 @@
-FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+FROM nvidia/cuda:12.2.0-base-ubuntu22.04
+#FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
 # ================ Install Python from source code =================
 
@@ -42,4 +43,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 5000/tcp
-CMD [ "python3.11", "./flock_llm_example.py" ]
+CMD [ "python3.11", "./main.py", "--conf", "conf.yaml" ]
+
