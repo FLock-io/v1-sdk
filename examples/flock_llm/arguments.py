@@ -6,6 +6,7 @@ import argparse
 from os import path
 
 import yaml
+from loguru import logger
 
 def add_args():
     parser = argparse.ArgumentParser(description="FedContinuum")
@@ -42,6 +43,7 @@ class Arguments:
                 except yaml.YAMLError as exc:
                     raise ValueError("Yaml error - check yaml file")
         except Exception as e:
+            logger.error(f"Error loading yaml file: {e}")
             return None
 
     def get_default_yaml_config(self, cmd_args):

@@ -34,7 +34,7 @@ pypi_datasets.utils.logging.set_verbosity_error()
 class FLockLLMFinetuneModel(FlockModel):
     def __init__(
             self,
-            args
+            args,
     ):
 
         self.args = args
@@ -162,12 +162,12 @@ class FLockLLMFinetuneModel(FlockModel):
         """
             Dataset loading
         """
-        self.local_train_dataset, self.local_eval_dataset = self.init_dataset()
+        self.local_train_dataset, self.local_eval_dataset = self.init_dataset(self.args.data_path)
 
-    def init_dataset(self):
+    def init_dataset(self, dataset_path: str):
         logger.info("\nPreparing the local training and validation dataset")
 
-        local_data = pypi_load_dataset("json", data_files=self.args.data_path)
+        local_data = pypi_load_dataset("json", data_files=dataset_path)
 
         if self.voter_val_set_size > 0:
             split_params = {

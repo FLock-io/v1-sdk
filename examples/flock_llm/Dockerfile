@@ -1,6 +1,10 @@
 FROM nvidia/cuda:12.2.0-base-ubuntu22.04
 #FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
+# ================ Setup system environment =================
+#ENV WANDB_API_KEY=your_wandb_api_key_here
+ENV WANDB_API_KEY=49094e75af25687267b35f6567d108f0084b4605
+
 # ================ Install Python from source code =================
 
 RUN apt-get update && apt-get install -y \
@@ -43,5 +47,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 5000/tcp
-CMD [ "python3.11", "./main.py", "--conf", "conf.yaml" ]
+CMD [ "python3.11", "main.py", "--conf", "config.yaml" ]
 

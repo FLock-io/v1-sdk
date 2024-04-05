@@ -4,11 +4,11 @@ common_args:
   random_seed: 1993 # Note: only works for experiment mode
 
 data_args:
-  data_path: "dataset.json"
+  data_path: "/dataset.json"
 
 model_args:
-  foundation_model: "mixtral7b"
-  foundation_model_pre_trained_weights_path: "model/Mistral-7B-v0.1"
+  foundation_model: "mistralai/Mistral-7B-v0.1" # google/gemma-2b, mistralai/Mistral-7B-v0.1, lmsys/vicuna-7b-v1.5
+  foundation_model_pre_trained_weights_source: "huggingface" # Options: "huggingface", "flock_s3" Defaults: "huggingface"
   finetune_adapter: "qlora"
   lora_r: 4
   lora_alpha: 4
