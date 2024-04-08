@@ -13,7 +13,7 @@ from typing import Union
 
 from loguru import logger
 
-class VicunaPrompter(object):
+class TemplatePrompter(object):
     __slots__ = ("template", "_verbose")
 
     def __init__(self, template_name: str = "", verbose: bool = False):

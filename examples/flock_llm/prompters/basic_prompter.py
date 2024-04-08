@@ -1,10 +1,6 @@
-from prompters.vicuna_prompter import VicunaPrompter
 from typing import Union
 
-class MixtralPrompter(VicunaPrompter):
-
-    def __init__(self, template_name: str = "", verbose: bool = False):
-        super().__init__(template_name, verbose)
+class BasicPrompter():
 
     def generate_prompt(
             self,

@@ -26,3 +26,7 @@ trl
 flock_sdk
 boto3
 rarfile
+
+# for model host
+fire
+gradio

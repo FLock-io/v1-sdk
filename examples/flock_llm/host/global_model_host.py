@@ -13,7 +13,7 @@ import os
 import fire
 import torch
 import transformers
-from transformers import GenerationConfig, LlamaForCausalLM, LlamaTokenizer
+from transformers import GenerationConfig, AutoTokenizer, AutoModelForCausalLM
 import gradio as gr
 from peft import (
     PeftModel,
@@ -21,8 +21,8 @@ from peft import (
     prepare_model_for_int8_training,
     set_peft_model_state_dict,
 )
-from utils.callbacks import Iteratorize, Stream
-from utils.prompter import Prompter
+from .callbacks import Iteratorize, Stream
+from prompters.prompter_hub import get_prompter
 
 # Check if we have a GPU available
 if torch.cuda.is_available():
@@ -38,39 +38,40 @@ except:
 
 def main(
     load_8bit: bool = False,
-    base_model: str = "",
+    base_model_path: str = "",
     lora_weights_path: str = "",
     lora_config_path: str= "", # provide only the file path, excluding the file name 'adapter_config.json'
     prompt_template: str = "",  # The prompt template to use, will default to alpaca.
     server_name: str = "127.0.0.1",
     share_gradio: bool = False,
 ):
-    base_model = base_model or os.environ.get("BASE_MODEL", "")
+    base_model_path = base_model_path or os.environ.get("BASE_MODEL", "")
     assert (
-        base_model
+        base_model_path
     ), "Please specify a --base_model, e.g. --base_model='huggyllama/llama-7b'"
 
-    prompter = Prompter(prompt_template)
-    tokenizer = LlamaTokenizer.from_pretrained(base_model)
+    prompter = get_prompter()
+    tokenizer = AutoTokenizer.from_pretrained(base_model_path,
+                                                       trust_remote_code=False,
+                                                       use_fast=True)
     if not lora_weights_path.endswith(".bin"):
         if device == "cuda":
-            model = LlamaForCausalLM.from_pretrained(
-                base_model,
-                load_in_8bit=load_8bit,
-                torch_dtype=torch.float16,
-                device_map="auto",
-            )
+
+            model = AutoModelForCausalLM.from_pretrained(base_model_path,
+                                                         load_in_8bit=load_8bit,
+                                                         trust_remote_code=False,
+                                                         device_map="auto")
             model = PeftModel.from_pretrained(
                 model,
                 lora_weights_path,
                 torch_dtype=torch.float16,
             )
         elif device == "mps":
-            model = LlamaForCausalLM.from_pretrained(
-                base_model,
-                device_map={"": device},
-                torch_dtype=torch.float16,
-            )
+            model = AutoModelForCausalLM.from_pretrained(base_model_path,
+                                                         load_in_8bit=load_8bit,
+                                                         trust_remote_code=False,
+                                                         torch_dtype=torch.float16,
+                                                         device_map={"": device})
             model = PeftModel.from_pretrained(
                 model,
                 lora_weights_path,
@@ -78,26 +79,27 @@ def main(
                 torch_dtype=torch.float16,
             )
         else:
-            model = LlamaForCausalLM.from_pretrained(
-                base_model, device_map={"": device}, low_cpu_mem_usage=True
-            )
+            model = AutoModelForCausalLM.from_pretrained(base_model_path,
+                                                         load_in_8bit=load_8bit,
+                                                         trust_remote_code=False,
+                                                         low_cpu_mem_usage=True,
+                                                         device_map={"": device})
             model = PeftModel.from_pretrained(
                 model,
                 lora_weights_path,
                 device_map={"": device},
             )
     else:
-        model = LlamaForCausalLM.from_pretrained(
-            base_model,
-            load_in_8bit=load_8bit,
-            torch_dtype=torch.float16,
-            device_map="auto",
-        )
+        model = AutoModelForCausalLM.from_pretrained(base_model_path,
+                                                     load_in_8bit=load_8bit,
+                                                     trust_remote_code=False,
+                                                     torch_dtype=torch.float16,
+                                                     device_map="auto")
         model = prepare_model_for_int8_training(model)
-        config = LoraConfig.from_pretrained(lora_config_path)
+        lora_config = LoraConfig.from_pretrained(lora_config_path)
 
         lora_weights = torch.load(lora_weights_path, map_location=device)
-        model = PeftModel(model, config)
+        model = PeftModel(model, lora_config)
         set_peft_model_state_dict(model,lora_weights,"default")
         del lora_weights
 
@@ -112,8 +114,7 @@ def main(
     model.eval()
 
     def evaluate(
-        instruction,
-        input=None,
+        data_point,
         temperature=0.1,
         top_p=0.75,
         top_k=40,
@@ -125,8 +126,16 @@ def main(
         """
         Generate model human evaluation setting and WebUI.
         """
-        prompt = prompter.generate_prompt(instruction, input)
-        inputs = tokenizer(prompt, return_tensors="pt")
+        # prompt = prompter.generate_prompt(instruction, input)
+
+        full_prompt = prompter.generate_prompt(
+            data_point["instruction"],
+            data_point["context"],
+            data_point["response"],
+        )
+
+        inputs = tokenizer(full_prompt, return_tensors="pt")
+
         input_ids = inputs["input_ids"].to(device)
         generation_config = GenerationConfig(
             temperature=temperature,
