@@ -46,12 +46,13 @@ def extract_with_progress_in_files(archive, members, extract_to, progress_prefix
             archive.extract(member, path=extract_to)
             pbar.update(1)
 
-def extract_file(file_path, extract_to):
+def extract_file(file_path, extract_to, final_directory_path):
     current_working_directory = os.getcwd()
     target_directory_abs_path = os.path.join(current_working_directory, extract_to)
+    final_directory_abs_path = os.path.join(extract_to, final_directory_path)
 
-    if os.path.exists(extract_to):
-        logger.warning(f"Target directory in absolute path '{target_directory_abs_path}' already exists. Skipping extraction.")
+    if os.path.exists(final_directory_abs_path):
+        logger.warning(f"Target directory in absolute path '{final_directory_abs_path}' already exists. Skipping extraction.")
         return
 
     mime_type, _ = mimetypes.guess_type(file_path)

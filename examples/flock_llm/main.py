@@ -43,12 +43,13 @@ def prepare_pretrained_model(args):
                 logger.warning(
                     f"The foundation model {args.foundation_model} with hash {_hash} file is downloaded in {target_download_file_path}")
             # Decompress the file
-            extract_file(target_download_file_path, download_path)
+            extract_file(target_download_file_path, download_path, args.foundation_model.split("/")[-1])
             args.foundation_model_pre_trained_weights_path = os.path.join(download_path, args.foundation_model.split("/")[-1])
         else:
             raise ValueError(f"Invalid foundation_model {args.foundation_model} in FLock S3 storage")
     else:
         raise ValueError(f"Invalid foundation_model_pre_trained_weights_source {args.foundation_model_pre_trained_weights_source}")
+
 
 def init_random_seed(seed):
     random.seed(seed)
