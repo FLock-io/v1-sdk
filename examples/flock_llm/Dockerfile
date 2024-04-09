@@ -2,8 +2,16 @@ FROM nvidia/cuda:12.2.0-base-ubuntu22.04
 #FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
 # ================ Setup system environment =================
-#ENV WANDB_API_KEY=your_wandb_api_key_here
-ENV WANDB_API_KEY=49094e75af25687267b35f6567d108f0084b4605
+ARG WANDB_API_KEY=your_wandb_api_key_here
+
+ENV WANDB_API_KEY=$WANDB_API_KEY
+
+# AWS S3 condential info
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
+
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 # ================ Install Python from source code =================
 

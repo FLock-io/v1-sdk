@@ -22,11 +22,10 @@ def init(args):
         init_random_seed(args.random_seed)
 
     if args.report_to == "wandb":
-        if not os.getenv("WANDB_API_KEY"):
-            if os.getenv("WANDB_API_KEY") == "your_wandb_api_key_here":
-                # raise ValueError("Please set your WANDB_API_KEY in the environment variables")
-                logger.warning("Please set your WANDB_API_KEY of the environment variables in Dockerfile, now choose not logging to wandb")
-                args.report_to = None
+        if not os.getenv("WANDB_API_KEY") or os.getenv("WANDB_API_KEY") == "your_wandb_api_key_here":
+            # raise ValueError("Please set your WANDB_API_KEY in the environment variables")
+            logger.warning("Please set your WANDB_API_KEY of the environment variables in Dockerfile, now choose not logging to wandb")
+            args.report_to = None
 
 def prepare_pretrained_model(args):
     if args.foundation_model_pre_trained_weights_source == "huggingface":
